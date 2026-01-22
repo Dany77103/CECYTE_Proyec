@@ -330,6 +330,24 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                         <span class="tooltip">Subir/Descargar Archivos</span>
                     </a>
                 </li>
+
+                
+		<li class="nav-item">
+                    <a href="qr_asistencia.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'qr_asistencia.php' ? 'active' : ''; ?>">
+                        <i class='bx bx-folder'></i>
+                        <span class="link-text">Asistencia QR</span>
+                        <span class="tooltip">Subir/Descargar Archivos</span>
+                    </a>
+                </li>
+
+                
+                <li class="nav-item">
+                      <a href="asignar_qr.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'asignar_qr.php' ? 'active' : ''; ?>">
+        <i class='bx bx-qr'></i>
+        <span class="link-text">Asignar QR</span>
+        <span class="tooltip">Asignar código QR para alumnos</span>
+                      </a>
+                </li>
                 
                 <!-- Separador -->
                 <li class="nav-item my-4">
@@ -345,6 +363,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                     </a>
                 </li>
                 
+                
                 <li class="nav-item">
                     <a href="perfil.php" class="nav-link">
                         <i class='bx bx-user'></i>
@@ -355,13 +374,11 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             </ul>
             
             <!-- Sección de usuario -->
-            <div class="user-section">
                 <a href="logout.php" class="user-link">
                     <i class='bx bx-log-out-circle' style="font-size: 1.5rem;"></i>
                     <span class="link-text">Cerrar Sesión</span>
                     <span class="tooltip">Cerrar Sesión</span>
                 </a>
-            </div>
         </aside>
         
         <!-- Contenido principal -->

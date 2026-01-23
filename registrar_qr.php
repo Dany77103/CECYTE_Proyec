@@ -1,48 +1,46 @@
 <?php
-// Evitar que PHP mande errores como texto
-error_reporting(0);
-ini_set('display_errors', 0);
-
+// registrar_qr.php
+ob_start(); 
 header('Content-Type: application/json');
 
-// Datos de conexión - VERIFICA TU PASSWORD DE SQLYOG
 $host = "localhost";
-$user = "root";     
-$pass = ""; // SI TIENES PASSWORD EN SQLYOG, PONLA AQUÍ
+$user = "root";
+$pass = ""; 
 $db   = "cecyte_sc";
 
-$conn = new mysqli($host, $user, $pass, $db);
+try {
+    $conn = new mysqli($host, $user, $pass, $db);
 
-if ($conn->connect_error) {
-    echo json_encode(['status' => 'error', 'message' => 'Error de conexión a BD']);
-    exit;
-}
-
-// Recibir datos
-$matricula = $_POST['matricula'] ?? '';
-$nombre    = $_POST['nombre'] ?? '';
-$grupo     = $_POST['grupo'] ?? '';
-
-if (empty($matricula) || empty($nombre)) {
-    echo json_encode(['status' => 'error', 'message' => 'Datos incompletos']);
-    exit;
-}
-
-// INSERTAR - Asegúrate que la tabla se llama alumnos_qr
-$sql = "INSERT INTO alumnos_qr (matricula, nombre, grupo) VALUES (?, ?, ?)";
-$stmt = $conn->prepare($sql);
-
-if ($stmt) {
-    $stmt->bind_param("sss", $matricula, $nombre, $grupo);
-    if ($stmt->execute()) {
-        echo json_encode(['status' => 'success']);
-    } else {
-        echo json_encode(['status' => 'error', 'message' => 'Error: Matrícula duplicada o tabla no encontrada']);
+    if ($conn->connect_error) {
+        throw new Exception("Error de conexión a la base de datos");
     }
-    $stmt->close();
-} else {
-    echo json_encode(['status' => 'error', 'message' => 'Error en la consulta SQL']);
-}
 
-$conn->close();
+    $matricula = $_POST['matricula'] ?? '';
+    $nombre    = $_POST['nombre'] ?? '';
+    $grupo     = $_POST['grupo'] ?? '';
+
+    // Ajustado a minúsculas: qralumnos
+    $stmt = $conn->prepare("INSERT INTO qralumnos (matricula, nombre, grupo) VALUES (?, ?, ?)");
+    
+    if (!$stmt) {
+        throw new Exception("Error en la tabla qralumnos: " . $conn->error);
+    }
+
+    $stmt->bind_param("sss", $matricula, $nombre, $grupo);
+    
+    if ($stmt->execute()) {
+        $nuevo_id = $conn->insert_id; 
+        ob_clean();
+        echo json_encode(['status' => 'success', 'alumno_id' => $nuevo_id]);
+    } else {
+        throw new Exception("Error: La matrícula ya existe en el sistema.");
+    }
+
+    $stmt->close();
+    $conn->close();
+
+} catch (Exception $e) {
+    ob_clean();
+    echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+}
 exit;

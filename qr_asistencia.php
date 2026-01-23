@@ -1,6 +1,5 @@
-
 <?php
-// Conexión a la base de datos
+// ConexiÃ³n a la base de datos
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -10,7 +9,7 @@ try {
     $con = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8", $username, $password);
     $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Error de conexión a la base de datos: " . $e->getMessage());
+    die("Error de conexiÃ³n a la base de datos: " . $e->getMessage());
 }
 
 session_start();
@@ -20,668 +19,315 @@ session_start();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Asistencia QR - CECyTE</title>
+    <title>Asistencia QR | CECyTE SC</title>
     <link rel="shortcut icon" href="img/favicon.ico" type="img/x-icon">
-    <!-- Bootstrap CSS -->
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- QR Scanner CSS -->
-    <link rel="stylesheet" href="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     
     <style>
         :root {
-            --primary-color: #2c3e50;
-            --secondary-color: #3498db;
-            --success-color: #27ae60;
-            --warning-color: #f39c12;
-            --danger-color: #e74c3c;
+            --cecyte-green: #28a745;
+            --cecyte-dark: #1e293b;
+            --cecyte-light: #f8fafc;
         }
         
         body {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f1f5f9;
+            font-family: 'Inter', 'Segoe UI', sans-serif;
+            color: #334155;
         }
-        
+
         .navbar-custom {
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            background: var(--cecyte-dark);
+            padding: 1rem 0;
+            border-bottom: 3px solid var(--cecyte-green);
         }
-        
-        .container-main {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 20px;
-        }
-        
+
+        .container-main { max-width: 1300px; margin: 2rem auto; padding: 0 15px; }
+
         .card-custom {
             border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            transition: transform 0.3s ease;
+            border-radius: 16px;
+            background: #ffffff;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
             overflow: hidden;
         }
-        
-        .card-custom:hover {
-            transform: translateY(-5px);
-        }
-        
+
         .card-header-custom {
-            background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
-            color: white;
-            padding: 20px;
-            border-bottom: none;
-        }
-        
-        .qr-container {
             background: white;
-            padding: 25px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            text-align: center;
-            margin: 20px 0;
+            padding: 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
         }
-        
-        #qr-reader {
-            width: 100%;
-            margin: 20px 0;
-        }
-        
-        #qr-reader-results {
-            font-size: 1.1rem;
-            margin-top: 20px;
-        }
-        
-        .status-indicator {
-            display: inline-block;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-            margin-right: 8px;
-        }
-        
-        .status-entrada {
-            background-color: var(--success-color);
-        }
-        
-        .status-salida {
-            background-color: var(--warning-color);
-        }
-        
-        .status-pendiente {
-            background-color: var(--danger-color);
-        }
-        
-        .btn-custom {
-            padding: 12px 30px;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            border: none;
-        }
-        
-        .btn-scan {
-            background: linear-gradient(90deg, var(--secondary-color), var(--primary-color));
-            color: white;
-        }
-        
-        .btn-scan:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
-        }
-        
-        .btn-generate {
-            background: linear-gradient(90deg, #27ae60, #2ecc71);
-            color: white;
-        }
-        
-        .btn-generate:hover {
-            transform: scale(1.05);
-            box-shadow: 0 5px 15px rgba(39, 174, 96, 0.3);
-        }
-        
-        .table-custom {
-            background: white;
-            border-radius: 10px;
+
+        .qr-wrapper {
+            background: #000;
+            border-radius: 12px;
             overflow: hidden;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            position: relative;
+            border: 4px solid white;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
+            max-width: 500px;
+            margin: 0 auto;
         }
-        
-        .table-custom thead {
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        .alert-custom {
-            border-radius: 10px;
-            border: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-        }
-        
-        .qr-code-display {
-            display: inline-block;
-            padding: 20px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        }
-        
-        .stats-card {
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
+
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+        .stat-item {
+            background: var(--cecyte-light);
+            padding: 1.5rem;
+            border-radius: 12px;
             text-align: center;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
         }
-        
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
+
+        .btn-cecyte {
+            background: var(--cecyte-green);
+            color: white;
+            border-radius: 10px;
+            padding: 0.6rem 1.5rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s;
         }
-        
-        .stats-label {
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        
-        @media (max-width: 768px) {
-            .container-main {
-                padding: 10px;
-            }
-            
-            .card-custom {
-                margin-bottom: 20px;
-            }
-        }
+
+        .btn-cecyte:hover { background: #218838; transform: translateY(-1px); }
+
+        .alert-custom { border-radius: 12px; border: none; font-weight: 500; }
+
+        /* AnimaciÃ³n para el escÃ¡ner */
+        #qr-reader__scan_region { background: white !important; }
     </style>
 </head>
 <body>
-    <!-- Navbar -->
+
     <nav class="navbar navbar-expand-lg navbar-dark navbar-custom">
         <div class="container">
-            <a class="navbar-brand" href="#">
-                <i class="fas fa-qrcode"></i> Sistema de Asistencia QR
+            <a class="navbar-brand d-flex align-items-center" href="#">
+                <div class="bg-success p-2 rounded-3 me-2">
+                    <i class="fas fa-qrcode text-white"></i>
+                </div>
+                <span>CECyTE <span class="text-success">SC</span></span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto">
-                    <li class="nav-item">
-                        <a class="nav-link active" href="#escaneo"><i class="fas fa-camera"></i> Escanear QR</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#generador"><i class="fas fa-qrcode"></i> Generar QR</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#registros"><i class="fas fa-history"></i> Historial</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="reportes.php"><i class="fas fa-arrow-left"></i> Volver a Reportes</a>
-                    </li>
+                    <li class="nav-item"><a class="nav-link" href="#escaneo"><i class="fas fa-camera me-1"></i> Escaneo</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#registros"><i class="fas fa-list-ul me-1"></i> Historial</a></li>
+                    <li class="nav-item ms-lg-3"><a class="btn btn-outline-light btn-sm px-3" href="reportes.php">Volver</a></li>
                 </ul>
             </div>
         </div>
     </nav>
 
     <div class="container-main">
-        <!-- Alertas -->
         <div id="alertContainer"></div>
 
-        <!-- Sección de Escaneo -->
-        <div class="card card-custom mb-5" id="escaneo">
-            <div class="card-header card-header-custom">
-                <h3 class="mb-0"><i class="fas fa-camera me-2"></i> Escanear Código QR</h3>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="qr-container">
+        <div class="row">
+            <div class="col-lg-7">
+                <div class="card card-custom" id="escaneo">
+                    <div class="card-header-custom">
+                        <h3><i class="fas fa-video me-2 text-success"></i>Control de Acceso</h3>
+                        <span id="cameraStatus" class="badge bg-secondary">CÃ¡mara Inactiva</span>
+                    </div>
+                    <div class="card-body p-4 text-center">
+                        <div class="qr-wrapper mb-4">
                             <div id="qr-reader"></div>
-                            <div id="qr-reader-results"></div>
                         </div>
-                        <div class="text-center mt-4">
-                            <button class="btn btn-custom btn-scan" id="startScanner">
-                                <i class="fas fa-play me-2"></i> Iniciar Escáner
+                        <div class="d-flex justify-content-center gap-2">
+                            <button class="btn btn-cecyte" id="startScanner">
+                                <i class="fas fa-play me-2"></i>Iniciar CÃ¡mara
                             </button>
-                            <button class="btn btn-outline-secondary ms-2" id="stopScanner">
-                                <i class="fas fa-stop me-2"></i> Detener Escáner
+                            <button class="btn btn-outline-danger" id="stopScanner">
+                                <i class="fas fa-stop me-2"></i>Detener
                             </button>
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="stats-card mb-4">
-                            <div class="stats-number" id="totalHoy">0</div>
-                            <div class="stats-label">Asistencias Hoy</div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="card card-custom">
+                    <div class="card-header-custom">
+                        <h3><i class="fas fa-chart-pie me-2 text-primary"></i>Resumen Hoy</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="stats-grid mb-4">
+                            <div class="stat-item">
+                                <div class="stats-number h2 fw-bold text-success" id="totalHoy">0</div>
+                                <div class="stats-label small text-muted">TOTAL ASISTENCIAS</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stats-number h2 fw-bold text-primary" id="totalPendientes">0</div>
+                                <div class="stats-label small text-muted">EN PLANTEL</div>
+                            </div>
                         </div>
-                        <div class="stats-card mb-4">
-                            <div class="stats-number" id="totalPendientes">0</div>
-                            <div class="stats-label">Pendientes de Salida</div>
-                        </div>
-                        <div class="alert alert-info alert-custom">
-                            <h5><i class="fas fa-info-circle me-2"></i> Instrucciones:</h5>
-                            <ol class="mb-0">
-                                <li>Permite el acceso a la cámara</li>
-                                <li>Coloca el código QR frente a la cámara</li>
-                                <li>El sistema registrará automáticamente entrada/salida</li>
-                            </ol>
+                        <div class="alert alert-info border-0 bg-light p-3">
+                            <h6 class="fw-bold"><i class="fas fa-info-circle me-2"></i>Ayuda</h6>
+                            <p class="small mb-0">Si la cÃ¡mara no inicia, verifica que estÃ¡s usando <b>localhost</b> o <b>HTTPS</b>.</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Sección de Generación de QR -->
-        <div class="card card-custom mb-5" id="generador">
-            <div class="card-header card-header-custom">
-                <h3 class="mb-0"><i class="fas fa-qrcode me-2"></i> Generar Códigos QR</h3>
-            </div>
-            <div class="card-body">
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" id="searchAlumno" placeholder="Buscar alumno por nombre o matrícula">
-                            <button class="btn btn-outline-primary" type="button" id="btnBuscar">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="col-md-6 text-end">
-                        <button class="btn btn-custom btn-generate" id="generateAllQR">
-                            <i class="fas fa-sync-alt me-2"></i> Generar Todos los QR
-                        </button>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-hover table-custom" id="alumnosTable">
-                        <thead>
-                            <tr>
-                                <th>Matrícula</th>
-                                <th>Nombre</th>
-                                <th>Grupo</th>
-                                <th>Estado QR</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="alumnosBody">
-                            <!-- Los datos se cargarán por AJAX -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <!-- QR Preview Modal -->
-                <div class="modal fade" id="qrModal" tabindex="-1">
-                    <div class="modal-dialog modal-dialog-centered">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h5 class="modal-title">Código QR del Alumno</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                            </div>
-                            <div class="modal-body text-center">
-                                <div id="qrPreview" class="mb-3"></div>
-                                <div id="alumnoInfo"></div>
-                            </div>
-                            <div class="modal-footer">
-                                <button class="btn btn-primary" onclick="descargarQR()">
-                                    <i class="fas fa-download me-2"></i> Descargar QR
-                                </button>
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sección de Historial -->
         <div class="card card-custom" id="registros">
-            <div class="card-header card-header-custom">
-                <h3 class="mb-0"><i class="fas fa-history me-2"></i> Historial de Asistencias</h3>
+            <div class="card-header-custom">
+                <h3><i class="fas fa-clock-rotate-left me-2 text-primary"></i>BitÃ¡cora Reciente</h3>
+                <input type="date" class="form-control w-auto" id="fechaFiltro" value="<?php echo date('Y-m-d'); ?>">
             </div>
             <div class="card-body">
-                <div class="row mb-4">
-                    <div class="col-md-4">
-                        <input type="date" class="form-control" id="fechaFiltro" value="<?php echo date('Y-m-d'); ?>">
-                    </div>
-                    <div class="col-md-4">
-                        <select class="form-select" id="grupoFiltro">
-                            <option value="">Todos los grupos</option>
-                            <!-- Opciones de grupos se cargarán por AJAX -->
-                        </select>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <button class="btn btn-outline-primary" onclick="exportarExcel()">
-                            <i class="fas fa-file-excel me-2"></i> Exportar Excel
-                        </button>
-                    </div>
-                </div>
-
                 <div class="table-responsive">
-                    <table class="table table-hover table-custom" id="asistenciasTable">
-                        <thead>
+                    <table class="table table-hover align-middle" id="asistenciasTable">
+                        <thead class="table-light">
                             <tr>
-                                <th>Matrícula</th>
-                                <th>Nombre</th>
-                                <th>Fecha</th>
+                                <th>MatrÃ­cula</th>
+                                <th>Alumno</th>
                                 <th>Entrada</th>
                                 <th>Salida</th>
-                                <th>Estado</th>
+                                <th>Estatus</th>
                             </tr>
                         </thead>
-                        <tbody id="asistenciasBody">
-                            <!-- Los datos se cargarán por AJAX -->
-                        </tbody>
+                        <tbody id="asistenciasBody"></tbody>
                     </table>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <!-- QR Scanner -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-    <!-- QR Code Generator -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
-    <!-- Excel Export -->
-    <script src="https://cdn.sheetjs.com/xlsx-0.19.3/package/dist/xlsx.full.min.js"></script>
-    
+
     <script>
-        // Variables globales
         let html5QrCode;
-        let qrGenerado = null;
-        let alumnoActual = null;
 
-        // Inicializar el escáner QR
-        function initScanner() {
-            html5QrCode = new Html5Qrcode("qr-reader");
-            
-            const qrCodeSuccessCallback = (decodedText, decodedResult) => {
-                // Detener el escáner temporalmente
-                stopScanner();
-                
-                // Procesar el código QR
-                procesarQR(decodedText);
-                
-                // Reiniciar después de 2 segundos
-                setTimeout(() => {
-                    startScanner();
-                }, 2000);
-            };
-            
-            const config = {
-                fps: 10,
-                qrbox: { width: 250, height: 250 }
-            };
-            
-            return { qrCodeSuccessCallback, config };
-        }
+        // 1. LÃ“GICA REFORZADA DEL ESCÃNER
+        async function startScanner() {
+            const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
+            const isHttps = window.location.protocol === "https:";
 
-        // Iniciar escáner
-        function startScanner() {
-            const { qrCodeSuccessCallback, config } = initScanner();
-            
-            Html5Qrcode.getCameras().then(devices => {
-                if (devices && devices.length) {
-                    const cameraId = devices[0].id;
-                    html5QrCode.start(
-                        cameraId,
+            if (!isLocalhost && !isHttps) {
+                showAlert('<strong>Error de Seguridad:</strong> Los navegadores bloquean la cÃ¡mara en conexiones no seguras (HTTP). Usa Localhost o configura las Chrome Flags.', 'danger');
+                return;
+            }
+
+            try {
+                if (html5QrCode) {
+                    await html5QrCode.stop().catch(() => {});
+                }
+
+                html5QrCode = new Html5Qrcode("qr-reader");
+                const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+
+                const devices = await Html5Qrcode.getCameras();
+                if (devices && devices.length > 0) {
+                    // Selecciona la cÃ¡mara trasera si existe, si no la primera disponible
+                    const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
+                    
+                    await html5QrCode.start(
+                        cameraId, 
                         config,
-                        qrCodeSuccessCallback,
-                        error => {
-                            console.error(error);
+                        (decodedText) => {
+                            // Al detectar Ã©xito
+                            $("#cameraStatus").removeClass("bg-secondary").addClass("bg-success").text("CÃ³digo Detectado");
+                            procesarQR(decodedText);
                         }
                     );
+                    $("#cameraStatus").removeClass("bg-secondary").addClass("bg-success").text("CÃ¡mara Activa");
                 } else {
-                    showAlert('No se encontraron cámaras disponibles', 'danger');
+                    showAlert('No se encontrÃ³ hardware de cÃ¡mara en este equipo.', 'warning');
                 }
-            }).catch(err => {
-                showAlert('Error al acceder a la cámara: ' + err, 'danger');
-            });
-        }
-
-        // Detener escáner
-        function stopScanner() {
-            if (html5QrCode) {
-                html5QrCode.stop().then(ignore => {
-                    console.log("Escáner detenido");
-                }).catch(err => {
-                    console.error("Error al detener escáner:", err);
-                });
+            } catch (err) {
+                console.error(err);
+                if (err.includes("NotAllowedError")) {
+                    showAlert('Permiso denegado. Haz clic en el candado de la barra de direcciones y activa la cÃ¡mara.', 'danger');
+                } else {
+                    showAlert('Error al acceder a la cÃ¡mara: ' + err, 'danger');
+                }
             }
         }
 
-        // Procesar código QR escaneado
+        async function stopScanner() {
+            if (html5QrCode) {
+                try {
+                    await html5QrCode.stop();
+                    $("#cameraStatus").removeClass("bg-success").addClass("bg-secondary").text("CÃ¡mara Inactiva");
+                } catch (err) {
+                    console.log("Error al detener:", err);
+                }
+            }
+        }
+
+        // 2. COMUNICACIÃ“N CON EL SERVIDOR
         function procesarQR(codigoQR) {
+            // Detenemos temporalmente para no leer el mismo cÃ³digo mil veces
+            stopScanner();
+
             $.ajax({
                 url: 'procesar_qr.php',
                 type: 'POST',
-                data: {
-                    codigo_qr: codigoQR,
-                    action: 'registrar'
-                },
+                data: { codigo_qr: codigoQR, action: 'registrar' },
                 success: function(response) {
-                    const data = JSON.parse(response);
-                    if (data.success) {
-                        showAlert(data.message, 'success');
+                    try {
+                        const data = JSON.parse(response);
+                        showAlert(data.message, data.success ? 'success' : 'danger');
                         actualizarEstadisticas();
                         cargarHistorial();
-                    } else {
-                        showAlert(data.message, 'danger');
+                    } catch(e) {
+                        showAlert('Error en el formato de respuesta del servidor.', 'warning');
                     }
+                    // Reiniciar cÃ¡mara despuÃ©s de 3 segundos
+                    setTimeout(startScanner, 3000);
                 },
                 error: function() {
-                    showAlert('Error al conectar con el servidor', 'danger');
+                    showAlert('No se pudo conectar con procesar_qr.php', 'danger');
+                    setTimeout(startScanner, 3000);
                 }
             });
         }
 
-        // Mostrar alerta
+        // 3. FUNCIONES DE APOYO
         function showAlert(message, type) {
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
             const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show alert-custom" role="alert">
-                    ${message}
+                <div class="alert alert-${type} alert-dismissible fade show alert-custom shadow-sm mb-4">
+                    <i class="fas ${icon} me-2"></i> ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            `;
+                </div>`;
             $('#alertContainer').html(alertHtml);
         }
 
-        // Cargar lista de alumnos
-        function cargarAlumnos(busqueda = '') {
-            $.ajax({
-                url: 'procesar_qr.php',
-                type: 'GET',
-                data: { 
-                    action: 'get_alumnos',
-                    search: busqueda 
-                },
-                success: function(response) {
-                    const alumnos = JSON.parse(response);
-                    let html = '';
-                    
-                    alumnos.forEach(alumno => {
-                        html += `
-                            <tr>
-                                <td>${alumno.matricula}</td>
-                                <td>${alumno.nombre}</td>
-                                <td>${alumno.grupo}</td>
-                                <td>
-                                    <span class="badge ${alumno.qr_generado ? 'bg-success' : 'bg-warning'}">
-                                        ${alumno.qr_generado ? 'Generado' : 'Pendiente'}
-                                    </span>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-primary" onclick="generarQRIndividual(${alumno.id})">
-                                        <i class="fas fa-qrcode"></i> Generar QR
-                                    </button>
-                                    ${alumno.qr_generado ? `
-                                        <button class="btn btn-sm btn-info" onclick="verQR(${alumno.id})">
-                                            <i class="fas fa-eye"></i> Ver
-                                        </button>
-                                    ` : ''}
-                                </td>
-                            </tr>
-                        `;
-                    });
-                    
-                    $('#alumnosBody').html(html);
-                }
-            });
-        }
-
-        // Generar QR para un alumno individual
-        function generarQRIndividual(alumnoId) {
-            $.ajax({
-                url: 'procesar_qr.php',
-                type: 'POST',
-                data: {
-                    action: 'generar_qr',
-                    alumno_id: alumnoId
-                },
-                success: function(response) {
-                    const data = JSON.parse(response);
-                    if (data.success) {
-                        showAlert(data.message, 'success');
-                        alumnoActual = data.alumno;
-                        mostrarQRModal(data.qr_code);
-                    } else {
-                        showAlert(data.message, 'danger');
-                    }
-                }
-            });
-        }
-
-        // Generar todos los QR
-        function generarTodosQR() {
-            if (confirm('¿Estás seguro de generar códigos QR para todos los alumnos?')) {
-                $.ajax({
-                    url: 'procesar_qr.php',
-                    type: 'POST',
-                    data: {
-                        action: 'generar_todos_qr'
-                    },
-                    success: function(response) {
-                        const data = JSON.parse(response);
-                        showAlert(data.message, data.success ? 'success' : 'warning');
-                        cargarAlumnos();
-                    }
-                });
-            }
-        }
-
-        // Mostrar QR en modal
-        function mostrarQRModal(qrData) {
-            const modal = new bootstrap.Modal(document.getElementById('qrModal'));
-            const qrPreview = document.getElementById('qrPreview');
-            const alumnoInfo = document.getElementById('alumnoInfo');
-            
-            // Generar QR visual
-            QRCode.toCanvas(qrPreview, qrData, {
-                width: 200,
-                margin: 2,
-                color: {
-                    dark: '#000000',
-                    light: '#FFFFFF'
-                }
-            }, function(error) {
-                if (error) console.error(error);
-            });
-            
-            // Mostrar información del alumno
-            alumnoInfo.innerHTML = `
-                <h5>${alumnoActual.nombre}</h5>
-                <p class="mb-1">Matrícula: ${alumnoActual.matricula}</p>
-                <p>Grupo: ${alumnoActual.grupo}</p>
-                <small class="text-muted">Escanea este código para registrar asistencia</small>
-            `;
-            
-            // Guardar QR para descarga
-            qrGenerado = {
-                data: qrData,
-                nombre: alumnoActual.nombre.replace(/\s+/g, '_'),
-                matricula: alumnoActual.matricula
-            };
-            
-            modal.show();
-        }
-
-        // Ver QR existente
-        function verQR(alumnoId) {
-            $.ajax({
-                url: 'procesar_qr.php',
-                type: 'POST',
-                data: {
-                    action: 'ver_qr',
-                    alumno_id: alumnoId
-                },
-                success: function(response) {
-                    const data = JSON.parse(response);
-                    if (data.success) {
-                        alumnoActual = data.alumno;
-                        mostrarQRModal(data.qr_code);
-                    }
-                }
-            });
-        }
-
-        // Descargar QR
-        function descargarQR() {
-            if (!qrGenerado) return;
-            
-            const canvas = document.querySelector('#qrPreview canvas');
-            const link = document.createElement('a');
-            link.download = `QR_${qrGenerado.nombre}_${qrGenerado.matricula}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-        }
-
-        // Cargar historial de asistencias
         function cargarHistorial() {
             const fecha = $('#fechaFiltro').val();
-            const grupo = $('#grupoFiltro').val();
-            
             $.ajax({
                 url: 'procesar_qr.php',
                 type: 'GET',
-                data: {
-                    action: 'get_asistencias',
-                    fecha: fecha,
-                    grupo: grupo
-                },
+                data: { action: 'get_asistencias', fecha: fecha },
                 success: function(response) {
                     const asistencias = JSON.parse(response);
                     let html = '';
-                    
-                    asistencias.forEach(asistencia => {
-                        const estado = asistencia.hora_salida ? 
-                            '<span class="badge bg-success">Completo</span>' : 
-                            '<span class="badge bg-warning">En clase</span>';
-                        
+                    asistencias.forEach(reg => {
+                        const statusBadge = reg.hora_salida ? 
+                            '<span class="badge bg-success">Completado</span>' : 
+                            '<span class="badge bg-primary animate-pulse">En Plantel</span>';
                         html += `
                             <tr>
-                                <td>${asistencia.matricula}</td>
-                                <td>${asistencia.nombre}</td>
-                                <td>${asistencia.fecha}</td>
-                                <td>${asistencia.hora_entrada || '-'}</td>
-                                <td>${asistencia.hora_salida || '-'}</td>
-                                <td>${estado}</td>
-                            </tr>
-                        `;
+                                <td class="fw-bold">${reg.matricula}</td>
+                                <td>${reg.nombre}</td>
+                                <td class="text-success">${reg.hora_entrada || '-'}</td>
+                                <td class="text-danger">${reg.hora_salida || '-'}</td>
+                                <td>${statusBadge}</td>
+                            </tr>`;
                     });
-                    
                     $('#asistenciasBody').html(html);
                 }
             });
         }
 
-        // Actualizar estadísticas
         function actualizarEstadisticas() {
             $.ajax({
                 url: 'procesar_qr.php',
@@ -695,77 +341,12 @@ session_start();
             });
         }
 
-        // Exportar a Excel
-        function exportarExcel() {
-            const fecha = $('#fechaFiltro').val();
-            const grupo = $('#grupoFiltro').val();
-            
-            $.ajax({
-                url: 'procesar_qr.php',
-                type: 'GET',
-                data: {
-                    action: 'export_excel',
-                    fecha: fecha,
-                    grupo: grupo
-                },
-                success: function(response) {
-                    const data = JSON.parse(response);
-                    
-                    // Crear libro de Excel
-                    const ws = XLSX.utils.json_to_sheet(data);
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, ws, "Asistencias");
-                    
-                    // Generar nombre del archivo
-                    const fechaStr = fecha || 'todas';
-                    const grupoStr = grupo || 'todos';
-                    const filename = `Asistencias_${fechaStr}_${grupoStr}.xlsx`;
-                    
-                    // Descargar
-                    XLSX.writeFile(wb, filename);
-                }
-            });
-        }
-
-        // Cargar opciones de grupos
-        function cargarGrupos() {
-            $.ajax({
-                url: 'procesar_qr.php',
-                type: 'GET',
-                data: { action: 'get_grupos' },
-                success: function(response) {
-                    const grupos = JSON.parse(response);
-                    let html = '<option value="">Todos los grupos</option>';
-                    
-                    grupos.forEach(grupo => {
-                        html += `<option value="${grupo}">${grupo}</option>`;
-                    });
-                    
-                    $('#grupoFiltro').html(html);
-                }
-            });
-        }
-
-        // Event Listeners
         $(document).ready(function() {
-            // Cargar datos iniciales
-            cargarAlumnos();
-            cargarHistorial();
-            cargarGrupos();
             actualizarEstadisticas();
-            
-            // Eventos
+            cargarHistorial();
             $('#startScanner').click(startScanner);
             $('#stopScanner').click(stopScanner);
-            $('#generateAllQR').click(generarTodosQR);
-            $('#btnBuscar').click(() => cargarAlumnos($('#searchAlumno').val()));
-            $('#searchAlumno').keypress(function(e) {
-                if (e.which === 13) cargarAlumnos($(this).val());
-            });
-            $('#fechaFiltro, #grupoFiltro').change(cargarHistorial);
-            
-            // Inicializar escáner al cargar
-            initScanner();
+            $('#fechaFiltro').change(cargarHistorial);
         });
     </script>
 </body>

@@ -99,7 +99,6 @@ session_start();
 
         .alert-custom { border-radius: 12px; border: none; font-weight: 500; }
 
-        /* Animación para el escáner */
         #qr-reader__scan_region { background: white !important; }
     </style>
 </head>
@@ -191,7 +190,8 @@ session_start();
                                 <th>Estatus</th>
                             </tr>
                         </thead>
-                        <tbody id="asistenciasBody"></tbody>
+                        <tbody id="asistenciasBody">
+                            </tbody>
                     </table>
                 </div>
             </div>
@@ -205,13 +205,13 @@ session_start();
     <script>
         let html5QrCode;
 
-        // 1. LÓGICA REFORZADA DEL ESCÁNER
+        // 1. LÓGICA DEL ESCÁNER
         async function startScanner() {
             const isLocalhost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
             const isHttps = window.location.protocol === "https:";
 
             if (!isLocalhost && !isHttps) {
-                showAlert('<strong>Error de Seguridad:</strong> Los navegadores bloquean la cámara en conexiones no seguras (HTTP). Usa Localhost o configura las Chrome Flags.', 'danger');
+                showAlert('<strong>Error de Seguridad:</strong> Acceso a cámara denegado en HTTP. Usa Localhost o HTTPS.', 'danger');
                 return;
             }
 
@@ -221,33 +221,20 @@ session_start();
                 }
 
                 html5QrCode = new Html5Qrcode("qr-reader");
-                const config = { fps: 15, qrbox: { width: 250, height: 250 } };
+                const config = { fps: 20, qrbox: { width: 250, height: 250 } };
 
-                const devices = await Html5Qrcode.getCameras();
-                if (devices && devices.length > 0) {
-                    // Selecciona la cámara trasera si existe, si no la primera disponible
-                    const cameraId = devices.length > 1 ? devices[1].id : devices[0].id;
-                    
-                    await html5QrCode.start(
-                        cameraId, 
-                        config,
-                        (decodedText) => {
-                            // Al detectar éxito
-                            $("#cameraStatus").removeClass("bg-secondary").addClass("bg-success").text("Código Detectado");
-                            procesarQR(decodedText);
-                        }
-                    );
-                    $("#cameraStatus").removeClass("bg-secondary").addClass("bg-success").text("Cámara Activa");
-                } else {
-                    showAlert('No se encontró hardware de cámara en este equipo.', 'warning');
-                }
+                await html5QrCode.start(
+                    { facingMode: "environment" }, 
+                    config,
+                    (decodedText) => {
+                        $("#cameraStatus").removeClass("bg-success").addClass("bg-warning").text("Procesando...");
+                        procesarQR(decodedText);
+                    }
+                );
+                $("#cameraStatus").removeClass("bg-secondary bg-warning").addClass("bg-success").text("Cámara Activa");
             } catch (err) {
                 console.error(err);
-                if (err.includes("NotAllowedError")) {
-                    showAlert('Permiso denegado. Haz clic en el candado de la barra de direcciones y activa la cámara.', 'danger');
-                } else {
-                    showAlert('Error al acceder a la cámara: ' + err, 'danger');
-                }
+                showAlert('Error al iniciar cámara: ' + err, 'danger');
             }
         }
 
@@ -256,16 +243,13 @@ session_start();
                 try {
                     await html5QrCode.stop();
                     $("#cameraStatus").removeClass("bg-success").addClass("bg-secondary").text("Cámara Inactiva");
-                } catch (err) {
-                    console.log("Error al detener:", err);
-                }
+                } catch (err) { console.log(err); }
             }
         }
 
-        // 2. COMUNICACIÓN CON EL SERVIDOR
+        // 2. COMUNICACIÓN CON EL SERVIDOR (CORREGIDA)
         function procesarQR(codigoQR) {
-            // Detenemos temporalmente para no leer el mismo código mil veces
-            stopScanner();
+            stopScanner(); // Detener para evitar lecturas duplicadas
 
             $.ajax({
                 url: 'procesar_qr.php',
@@ -273,57 +257,67 @@ session_start();
                 data: { codigo_qr: codigoQR, action: 'registrar' },
                 success: function(response) {
                     try {
-                        const data = JSON.parse(response);
+                        // Intentamos limpiar la respuesta por si hay basura antes del JSON
+                        const jsonStart = response.indexOf('{');
+                        const jsonString = response.substring(jsonStart);
+                        const data = JSON.parse(jsonString);
+                        
                         showAlert(data.message, data.success ? 'success' : 'danger');
                         actualizarEstadisticas();
                         cargarHistorial();
                     } catch(e) {
-                        showAlert('Error en el formato de respuesta del servidor.', 'warning');
+                        console.error("Error raw:", response);
+                        showAlert('Error en respuesta del servidor. Revisa la consola.', 'warning');
                     }
-                    // Reiniciar cámara después de 3 segundos
-                    setTimeout(startScanner, 3000);
+                    setTimeout(startScanner, 2000); // Reiniciar después de 2 seg
                 },
                 error: function() {
-                    showAlert('No se pudo conectar con procesar_qr.php', 'danger');
-                    setTimeout(startScanner, 3000);
+                    showAlert('Error de conexión con el servidor', 'danger');
+                    setTimeout(startScanner, 2000);
                 }
             });
         }
 
-        // 3. FUNCIONES DE APOYO
-        function showAlert(message, type) {
-            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
-            const alertHtml = `
-                <div class="alert alert-${type} alert-dismissible fade show alert-custom shadow-sm mb-4">
-                    <i class="fas ${icon} me-2"></i> ${message}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>`;
-            $('#alertContainer').html(alertHtml);
-        }
-
+        // 3. CARGA DE DATOS (CORREGIDA)
         function cargarHistorial() {
             const fecha = $('#fechaFiltro').val();
+            
             $.ajax({
                 url: 'procesar_qr.php',
                 type: 'GET',
                 data: { action: 'get_asistencias', fecha: fecha },
                 success: function(response) {
-                    const asistencias = JSON.parse(response);
-                    let html = '';
-                    asistencias.forEach(reg => {
-                        const statusBadge = reg.hora_salida ? 
-                            '<span class="badge bg-success">Completado</span>' : 
-                            '<span class="badge bg-primary animate-pulse">En Plantel</span>';
-                        html += `
-                            <tr>
-                                <td class="fw-bold">${reg.matricula}</td>
-                                <td>${reg.nombre}</td>
-                                <td class="text-success">${reg.hora_entrada || '-'}</td>
-                                <td class="text-danger">${reg.hora_salida || '-'}</td>
-                                <td>${statusBadge}</td>
-                            </tr>`;
-                    });
-                    $('#asistenciasBody').html(html);
+                    try {
+                        // Limpieza de JSON para evitar el error visual
+                        const jsonStart = response.indexOf('[');
+                        if (jsonStart === -1) throw "No JSON array found";
+                        const jsonString = response.substring(jsonStart);
+                        const asistencias = JSON.parse(jsonString);
+                        
+                        let html = '';
+                        if (asistencias.length === 0) {
+                            html = '<tr><td colspan="5" class="text-center text-muted p-4">Sin registros para esta fecha.</td></tr>';
+                        } else {
+                            asistencias.forEach(reg => {
+                                const statusBadge = reg.hora_salida ? 
+                                    '<span class="badge bg-success shadow-sm"><i class="fas fa-check me-1"></i> Completado</span>' : 
+                                    '<span class="badge bg-primary animate-pulse shadow-sm"><i class="fas fa-sign-in-alt me-1"></i> En Plantel</span>';
+                                
+                                html += `
+                                    <tr>
+                                        <td class="fw-bold text-dark">${reg.matricula}</td>
+                                        <td>${reg.nombre}</td>
+                                        <td class="text-success fw-medium"><i class="far fa-clock me-1"></i> ${reg.hora_entrada || '-'}</td>
+                                        <td class="text-danger fw-medium"><i class="far fa-clock me-1"></i> ${reg.hora_salida || '--:--'}</td>
+                                        <td>${statusBadge}</td>
+                                    </tr>`;
+                            });
+                        }
+                        $('#asistenciasBody').html(html);
+                    } catch (e) {
+                        console.error("Error carga:", response);
+                        $('#asistenciasBody').html('<tr><td colspan="5" class="text-center text-danger">Error de formato en el servidor.</td></tr>');
+                    }
                 }
             });
         }
@@ -334,11 +328,26 @@ session_start();
                 type: 'GET',
                 data: { action: 'get_stats' },
                 success: function(response) {
-                    const stats = JSON.parse(response);
-                    $('#totalHoy').text(stats.total_hoy);
-                    $('#totalPendientes').text(stats.pendientes_salida);
+                    try {
+                        const jsonStart = response.indexOf('{');
+                        const stats = JSON.parse(response.substring(jsonStart));
+                        $('#totalHoy').text(stats.total_hoy || 0);
+                        $('#totalPendientes').text(stats.pendientes_salida || 0);
+                    } catch(e) { console.log("Stats error"); }
                 }
             });
+        }
+
+        function showAlert(message, type) {
+            const icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show alert-custom shadow-sm mb-4">
+                    <i class="fas ${icon} me-2"></i> ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>`;
+            $('#alertContainer').html(alertHtml);
+            // Auto cerrar alertas de éxito después de 4 seg
+            if(type === 'success') setTimeout(() => $('.alert').alert('close'), 4000);
         }
 
         $(document).ready(function() {

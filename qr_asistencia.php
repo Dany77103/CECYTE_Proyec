@@ -29,6 +29,7 @@ session_start();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asistencia QR | CECyTE SC</title>
+    <link rel="shortcut icon" href="img/favicon.ico" type="img/x-icon">
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -62,6 +63,11 @@ session_start();
             <a class="navbar-brand d-flex align-items-center" href="#">
                 <i class="fas fa-qrcode text-success me-2"></i> CECyTE SC
             </a>
+
+            <a href="main.php" class="btn btn-outline-success btn-sm d-flex align-items-center" style="border-radius: 20px; padding: 5px 20px;">
+            <i class="bi bi-arrow-left-short me-1"></i> Volver
+        </a>
+
         </div>
     </nav>
 

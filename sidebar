@@ -1,0 +1,34 @@
+<?php $current_page = basename($_SERVER['PHP_SELF']); ?>
+
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <div class="logo-name">CECyTE CONTROL</div>
+        <i class='bx bx-menu-alt-right' id="btn-toggle" style="cursor:pointer; font-size: 1.5rem;"></i>
+    </div>
+    
+    <div class="mt-4">
+        <a href="main.php" class="nav-link <?php echo ($current_page == 'main.php') ? 'active' : ''; ?>">
+            <i class='bx bx-grid-alt'></i>
+            <span class="link-text">Dashboard</span>
+        </a>
+        <a href="registro.php" class="nav-link <?php echo ($current_page == 'registro.php') ? 'active' : ''; ?>">
+            <i class='bx bx-edit-alt'></i>
+            <span class="link-text">Registros</span>
+        </a>
+        <a href="reportes.php" class="nav-link <?php echo ($current_page == 'reportes.php') ? 'active' : ''; ?>">
+            <i class='bx bx-bar-chart-square'></i>
+            <span class="link-text">Reportes</span>
+        </a>
+        <a href="updo.php" class="nav-link <?php echo ($current_page == 'updo.php') ? 'active' : ''; ?>">
+            <i class='bx bx-cloud-upload'></i>
+            <span class="link-text">Archivos</span>
+        </a>
+    </div>
+
+    <div style="position: absolute; bottom: 20px; width: 100%;">
+        <a href="logout.php" class="nav-link text-danger">
+            <i class='bx bx-log-out'></i>
+            <span class="link-text">Salir</span>
+        </a>
+    </div>
+</aside>

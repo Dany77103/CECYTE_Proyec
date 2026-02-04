@@ -1,105 +1,55 @@
 <?php
-// Conexión a la base de datos usando PDO
+// ConfiguraciÃ³n de conexiÃ³n
 $servername = "localhost";
 $username = "root";
 $password = "";
 $dbname = "cecyte_sc";
 
 try {
-    $con = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8", $username, $password);
+    $con = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
     $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 } catch (PDOException $e) {
-    die("Error de conexión a la base de datos: " . $e->getMessage());
+    die("Error de conexiÃ³n: " . $e->getMessage());
 }
 
-// Función para obtener datos de la base de datos usando PDO
 function obtenerDatos($query) {
-    global $con; // Usamos la variable $con (conexión PDO)
+    global $con;
     try {
         $stmt = $con->query($query);
-        return $stmt->fetchAll(PDO::FETCH_ASSOC); // Devuelve los datos como un array asociativo
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
-        return []; // Devolver array vacío en caso de error
+        return [];
     }
 }
 
 session_start();
-
-// Verificar si el usuario ha iniciado sesión
 if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header('Location: index.php');
     exit;
 }
 
-// Consultas SQL principales
-$queryAlumnosActivos = "SELECT COUNT(*) AS alumnosActivos FROM historialacademicoalumnos haa
-                        INNER JOIN estatus e ON e.id_estatus = haa.id_estatus
-                        WHERE e.tipoEstatus = 'activo'";
+// --- CONSULTAS ---
+$resActivos = obtenerDatos("SELECT COUNT(*) AS total FROM historialacademicoalumnos haa INNER JOIN estatus e ON e.id_estatus = haa.id_estatus WHERE e.tipoestatus = 'activo'");
+$alumnosActivos = $resActivos[0]['total'] ?? 0;
 
-$queryAlumnosBajaTemporal = "SELECT COUNT(*) AS alumnosBajaTemporal FROM historialacademicoalumnos haa
-                             INNER JOIN estatus e ON e.id_estatus = haa.id_estatus
-                             WHERE e.tipoEstatus = 'baja temporal'";
+$resTotalAlumnos = obtenerDatos("SELECT COUNT(*) AS total FROM alumnos");
+$totalAlumnos = $resTotalAlumnos[0]['total'] ?? 0;
 
-$queryMaestrosActivos = "SELECT COUNT(*) AS maestrosActivos FROM datoslaboralesmaestros dlm
-                         INNER JOIN estatus e ON e.id_estatus = dlm.id_estatus
-                         WHERE e.tipoEstatus = 'activo'";
+$resMaestros = obtenerDatos("SELECT COUNT(*) AS total FROM maestros");
+$totalMaestros = $resMaestros[0]['total'] ?? 0;
 
-// Nuevas consultas para estadísticas adicionales
-$queryTotalAlumnos = "SELECT COUNT(*) AS total FROM alumnos";
-$queryTotalMaestros = "SELECT COUNT(*) AS total FROM maestros";
-$queryTotalCalificaciones = "SELECT COUNT(*) AS total FROM calificaciones";
-$queryAlumnosPorGenero = "SELECT 
-                            SUM(CASE WHEN genero = 'Masculino' THEN 1 ELSE 0 END) as masculino,
-                            SUM(CASE WHEN genero = 'Femenino' THEN 1 ELSE 0 END) as femenino,
-                            SUM(CASE WHEN genero IS NULL OR genero = '' THEN 1 ELSE 0 END) as no_especificado
-                          FROM alumnos";
-$queryPromedioCalificaciones = "SELECT AVG(calificacion) as promedio FROM calificaciones";
-$queryAlumnosPorGrupo = "SELECT grupo, COUNT(*) as cantidad FROM alumnos GROUP BY grupo ORDER BY cantidad DESC LIMIT 10";
-$queryAsistenciaPromedio = "SELECT 
-                            DATE_FORMAT(fecha, '%Y-%m') as mes,
-                            AVG(CASE WHEN hora_entrada IS NOT NULL THEN 1 ELSE 0 END) * 100 as asistencia_promedio
-                            FROM asistencias_qr 
-                            WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
-                            GROUP BY DATE_FORMAT(fecha, '%Y-%m')
-                            ORDER BY mes DESC";
+$resPromedio = obtenerDatos("SELECT AVG(calificacion) as promedio FROM calificaciones");
+$promedioCalificaciones = $resPromedio[0]['promedio'] ?? 0;
 
-// Obtener datos principales
-$alumnosActivos = obtenerDatos($queryAlumnosActivos)[0]['alumnosActivos'] ?? 0;
-$alumnosBajaTemporal = obtenerDatos($queryAlumnosBajaTemporal)[0]['alumnosBajaTemporal'] ?? 0;
-$maestrosActivos = obtenerDatos($queryMaestrosActivos)[0]['maestrosActivos'] ?? 0;
+$resGenero = obtenerDatos("SELECT SUM(CASE WHEN genero = 'masculino' THEN 1 ELSE 0 END) as masc, SUM(CASE WHEN genero = 'femenino' THEN 1 ELSE 0 END) as fem FROM alumnos");
+$generoData = $resGenero[0] ?? ['masc' => 0, 'fem' => 0];
 
-// Obtener datos adicionales
-$totalAlumnos = obtenerDatos($queryTotalAlumnos)[0]['total'] ?? 0;
-$totalMaestros = obtenerDatos($queryTotalMaestros)[0]['total'] ?? 0;
-$totalCalificaciones = obtenerDatos($queryTotalCalificaciones)[0]['total'] ?? 0;
-$generoData = obtenerDatos($queryAlumnosPorGenero)[0] ?? ['masculino' => 0, 'femenino' => 0, 'no_especificado' => 0];
-$promedioCalificaciones = obtenerDatos($queryPromedioCalificaciones)[0]['promedio'] ?? 0;
-$alumnosPorGrupo = obtenerDatos($queryAlumnosPorGrupo);
-$asistenciaMensual = obtenerDatos($queryAsistenciaPromedio);
-
-// Preparar datos para gráficas
-$gruposLabels = array_column($alumnosPorGrupo, 'grupo');
-$gruposData = array_column($alumnosPorGrupo, 'cantidad');
-
-$mesesLabels = array_column($asistenciaMensual, 'mes');
-$asistenciaData = array_column($asistenciaMensual, 'asistencia_promedio');
-
-// Convertir datos a JSON para JavaScript
 $dataJSON = json_encode([
-    'alumnosActivos' => $alumnosActivos,
-    'alumnosBajaTemporal' => $alumnosBajaTemporal,
-    'maestrosActivos' => $maestrosActivos,
-    'totalAlumnos' => $totalAlumnos,
-    'totalMaestros' => $totalMaestros,
-    'totalCalificaciones' => $totalCalificaciones,
-    'generoMasculino' => $generoData['masculino'],
-    'generoFemenino' => $generoData['femenino'],
-    'generoNoEspecificado' => $generoData['no_especificado'],
-    'promedioCalificaciones' => round($promedioCalificaciones, 2),
-    'gruposLabels' => $gruposLabels,
-    'gruposData' => $gruposData,
-    'mesesLabels' => $mesesLabels,
-    'asistenciaData' => $asistenciaData
+    'activos' => (int)$alumnosActivos,
+    'totalAlumnos' => (int)$totalAlumnos,
+    'totalMaestros' => (int)$totalMaestros,
+    'promedio' => round((float)$promedioCalificaciones, 1),
+    'genero' => [(int)($generoData['masc'] ?? 0), (int)($generoData['fem'] ?? 0)]
 ]);
 ?>
 
@@ -108,1102 +58,253 @@ $dataJSON = json_encode([
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CECYTE - Sistema de Estadísticas</title>
-    <link rel="shortcut icon" href="img/favicon.ico" type="img/x-icon">
+    <title>CECYTE | Dashboard EstadÃ­stico</title>
     
-    <!-- Bootstrap CSS -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Boxicons -->
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Estilos personalizados -->
-    <link rel="stylesheet" href="styles.css">
-    
+
     <style>
         :root {
-            --sidebar-width: 250px;
-            --sidebar-collapsed: 80px;
-            --primary-color: #2c3e50;
-            --secondary-color: #34495e;
-            --accent-color: #3498db;
-            --text-color: #ecf0f1;
-            --hover-color: #1abc9c;
+            --primary-color: #064e3b;
+            --accent-color: #10b981;
+            --bg-body: #f8fafc;
+            --card-shadow: 0 10px 25px rgba(0,0,0,0.05);
         }
-        
-        .main-container {
-            display: flex;
-            min-height: 100vh;
-            transition: margin-left 0.3s ease;
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-body);
+            color: #1e293b;
         }
-        
-        /* Sidebar mejorado */
-        .sidebar {
-            width: var(--sidebar-width);
-            background: linear-gradient(180deg, var(--primary-color), var(--secondary-color));
-            color: var(--text-color);
-            position: fixed;
-            height: 100vh;
-            overflow-y: auto;
-            transition: all 0.3s ease;
-            z-index: 1000;
-            box-shadow: 3px 0 15px rgba(0,0,0,0.1);
-        }
-        
-        .sidebar.collapsed {
-            width: var(--sidebar-collapsed);
-        }
-        
-        .sidebar-header {
-            padding: 20px 15px;
-            background-color: rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        .logo-container {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .logo-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: white;
-            white-space: nowrap;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-        
-        .sidebar.collapsed .logo-name {
-            opacity: 0;
-            width: 0;
-        }
-        
-        #btn-toggle {
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: white;
-            background: rgba(255,255,255,0.1);
-            padding: 8px;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-        }
-        
-        #btn-toggle:hover {
-            background: var(--accent-color);
-            transform: rotate(90deg);
-        }
-        
-        .sidebar-menu {
-            padding: 20px 0;
-        }
-        
-        .nav-item {
-            list-style: none;
-            margin: 5px 0;
-        }
-        
-        .nav-link {
-            display: flex;
-            align-items: center;
-            padding: 12px 20px;
-            color: var(--text-color);
-            text-decoration: none;
-            transition: all 0.3s ease;
-            position: relative;
-            border-left: 4px solid transparent;
-        }
-        
-        .nav-link:hover,
-        .nav-link.active {
-            background: rgba(255,255,255,0.1);
-            border-left-color: var(--hover-color);
-            color: white;
-        }
-        
-        .nav-link i {
-            font-size: 1.3rem;
-            min-width: 40px;
-            text-align: center;
-        }
-        
-        .link-text {
-            margin-left: 10px;
-            white-space: nowrap;
-            transition: opacity 0.3s ease;
-        }
-        
-        .sidebar.collapsed .link-text {
-            opacity: 0;
-            width: 0;
-        }
-        
-        .tooltip {
-            position: absolute;
-            left: calc(var(--sidebar-collapsed) + 10px);
-            background: var(--primary-color);
-            color: white;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            white-space: nowrap;
-            opacity: 0;
-            visibility: hidden;
-            transition: all 0.3s ease;
-            z-index: 1001;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        }
-        
-        .sidebar.collapsed .nav-link:hover .tooltip {
-            opacity: 1;
-            visibility: visible;
-        }
-        
-        .user-section {
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            padding: 15px;
-            background: rgba(0,0,0,0.2);
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        
-        .user-link {
-            display: flex;
-            align-items: center;
-            color: var(--text-color);
-            text-decoration: none;
-            padding: 10px;
-            border-radius: 5px;
-            transition: all 0.3s ease;
-        }
-        
-        .user-link:hover {
-            background: rgba(255,255,255,0.1);
-            color: white;
-        }
-        
-        /* Contenido principal */
-        .content-wrapper {
-            flex: 1;
-            margin-left: var(--sidebar-width);
-            transition: margin-left 0.3s ease;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            min-height: 100vh;
-        }
-        
-        .sidebar.collapsed ~ .content-wrapper {
-            margin-left: var(--sidebar-collapsed);
-        }
-        
-        /* Header fijo */
+
         .main-header {
-            background: white;
-            padding: 15px 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: #fff;
+            padding: 15px 40px;
+            box-shadow: 0 2px 15px rgba(0,0,0,0.05);
             position: sticky;
             top: 0;
             z-index: 100;
-        }
-        
-        /* Estilos para el sistema de estadísticas */
-        .stats-container {
-            padding: 30px;
-        }
-        
-        .page-title {
-            color: var(--primary-color);
-            margin-bottom: 30px;
-            font-weight: 700;
             border-bottom: 3px solid var(--accent-color);
-            padding-bottom: 15px;
         }
-        
-        /* Tarjetas de estadísticas principales */
-        .main-stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 40px;
+
+        .btn-back {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(16, 185, 129, 0.1); color: var(--primary-color);
+            padding: 10px 18px; border-radius: 12px;
+            text-decoration: none; font-weight: 600;
+            transition: 0.3s ease;
         }
-        
-        .stat-card-main {
+
+        .btn-back:hover {
+            background: var(--primary-color); color: white; transform: translateX(-5px);
+        }
+
+        .content-wrapper {
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .stat-card {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            transition: all 0.3s ease;
-            border-top: 5px solid;
-            text-align: center;
-        }
-        
-        .stat-card-main:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        }
-        
-        .stat-card-main.alumnos {
-            border-top-color: #3498db;
-        }
-        
-        .stat-card-main.maestros {
-            border-top-color: #2ecc71;
-        }
-        
-        .stat-card-main.calificaciones {
-            border-top-color: #f39c12;
-        }
-        
-        .stat-card-main.estado {
-            border-top-color: #e74c3c;
-        }
-        
-        .stat-icon {
-            font-size: 2.5rem;
-            margin-bottom: 15px;
-            display: block;
-        }
-        
-        .stat-card-main.alumnos .stat-icon {
-            color: #3498db;
-        }
-        
-        .stat-card-main.maestros .stat-icon {
-            color: #2ecc71;
-        }
-        
-        .stat-card-main.calificaciones .stat-icon {
-            color: #f39c12;
-        }
-        
-        .stat-card-main.estado .stat-icon {
-            color: #e74c3c;
-        }
-        
-        .stat-number {
-            font-size: 2.8rem;
-            font-weight: 700;
-            margin-bottom: 10px;
-            line-height: 1;
-        }
-        
-        .stat-card-main.alumnos .stat-number {
-            color: #3498db;
-        }
-        
-        .stat-card-main.maestros .stat-number {
-            color: #2ecc71;
-        }
-        
-        .stat-card-main.calificaciones .stat-number {
-            color: #f39c12;
-        }
-        
-        .stat-card-main.estado .stat-number {
-            color: #e74c3c;
-        }
-        
-        .stat-label {
-            color: #6c757d;
-            font-size: 1rem;
-            font-weight: 500;
-        }
-        
-        /* Controles de gráficas */
-        .chart-controls {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        }
-        
-        .chart-title {
-            color: var(--primary-color);
-            margin-bottom: 20px;
-            font-weight: 600;
-        }
-        
-        .chart-buttons {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        
-        .btn-chart {
-            padding: 10px 20px;
-            border-radius: 50px;
-            font-weight: 600;
-            transition: all 0.3s ease;
             border: none;
-            min-width: 140px;
-        }
-        
-        .btn-chart:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-        
-        .chart-type-selector {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            flex-wrap: wrap;
-        }
-        
-        .chart-type-label {
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-        
-        /* Contenedor de gráficas */
-        .charts-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-        
-        @media (max-width: 768px) {
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-        
-        .chart-wrapper {
-            background: white;
-            border-radius: 15px;
+            border-radius: 20px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+            box-shadow: var(--card-shadow);
             transition: all 0.3s ease;
+            border-bottom: 4px solid transparent;
         }
-        
-        .chart-wrapper:hover {
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+
+        .stat-card:hover { 
+            transform: translateY(-8px); 
+            border-bottom: 4px solid var(--accent-color);
         }
-        
-        .chart-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
+
+        .stat-icon-wrapper {
+            width: 55px; height: 55px;
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px; margin-bottom: 15px;
         }
-        
-        .chart-subtitle {
-            color: var(--primary-color);
-            font-weight: 600;
-            margin: 0;
-        }
-        
-        .chart-actions {
-            display: flex;
-            gap: 10px;
-        }
-        
-        .btn-chart-action {
-            padding: 8px 15px;
-            border-radius: 5px;
-            font-size: 0.9rem;
-            background: #f8f9fa;
-            border: 1px solid #dee2e6;
-            color: #6c757d;
-            transition: all 0.3s ease;
-        }
-        
-        .btn-chart-action:hover {
-            background: #e9ecef;
-            color: var(--primary-color);
-        }
-        
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-        
-        /* Tabla de estadísticas detalladas */
-        .stats-table-container {
+
+        /* Colores de Iconos Unificados */
+        .icon-blue { background: #eff6ff; color: #2563eb; }
+        .icon-green { background: #f0fdf4; color: #16a34a; }
+        .icon-orange { background: #fffbeb; color: #d97706; }
+        .icon-primary { background: #f0fdfa; color: var(--primary-color); }
+
+        .stat-value { font-size: 2.2rem; font-weight: 800; color: #0f172a; display: block; }
+        .stat-label { color: #64748b; font-size: 0.85rem; text-transform: uppercase; font-weight: 600; }
+
+        .chart-box {
             background: white;
-            border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-            margin-bottom: 40px;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-top: 20px;
+            height: 100%;
         }
-        
-        .table-stats {
-            width: 100%;
-            border-collapse: collapse;
-        }
-        
-        .table-stats thead {
-            background: var(--primary-color);
-            color: white;
-        }
-        
-        .table-stats th {
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-        
-        .table-stats tbody tr {
-            border-bottom: 1px solid #dee2e6;
-            transition: background 0.3s ease;
-        }
-        
-        .table-stats tbody tr:hover {
-            background: #f8f9fa;
-        }
-        
-        .table-stats td {
-            padding: 15px;
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
-            .sidebar {
-                width: var(--sidebar-collapsed);
-            }
-            
-            .sidebar:not(.collapsed) {
-                width: var(--sidebar-width);
-            }
-            
-            .content-wrapper {
-                margin-left: var(--sidebar-collapsed);
-            }
-            
-            .sidebar:not(.collapsed) ~ .content-wrapper {
-                margin-left: var(--sidebar-width);
-            }
-            
-            .stats-container {
-                padding: 15px;
-            }
-            
-            .main-stats-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .chart-buttons {
-                flex-direction: column;
-            }
-            
-            .btn-chart {
-                min-width: 100%;
-            }
-            
-            .charts-grid {
-                grid-template-columns: 1fr;
-            }
+
+        @media print {
+            .btn-back, .main-header, .print-hidden { display: none !important; }
+            .content-wrapper { padding: 0; }
         }
     </style>
 </head>
 <body>
-    <div class="main-container">
-        <!-- Sidebar -->
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <div class="logo-container">
-                    <div class="logo-name">SISTEMA DE ESTADÍSTICAS</div>
-                    <i class='bx bx-menu' id="btn-toggle"></i>
-                </div>
-            </div>
-            
-            <ul class="sidebar-menu">
-                <!-- Barra de búsqueda -->
-                <li class="nav-item">
-                    <div class="nav-link search-box">
-                        <i class='bx bx-search'></i>
-                        <input type="text" class="form-control" placeholder="Buscar..." id="sidebar-search">
-                        <span class="tooltip">Buscar en el sistema</span>
-                    </div>
-                </li>
-                
-                <!-- Menú principal -->
-                <li class="nav-item">
-                    <a href="main.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'main.php' ? 'active' : ''; ?>">
-                        <i class='bx bx-home-alt-2'></i>
-                        <span class="link-text">Inicio</span>
-                        <span class="tooltip">Inicio</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a href="registro.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'registro.php' ? 'active' : ''; ?>">
-                        <i class='bx bx-file'></i>
-                        <span class="link-text">Registro</span>
-                        <span class="tooltip">Registro de Información</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a href="reportes.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'reportes.php' ? 'active' : ''; ?>">
-                        <i class='bx bx-pencil'></i>
-                        <span class="link-text">Reportes</span>
-                        <span class="tooltip">Generar Reportes</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a href="estadisticas.php" class="nav-link active">
-                        <i class='bx bx-chart'></i>
-                        <span class="link-text">Estadísticas</span>
-                        <span class="tooltip">Ver Estadísticas</span>
-                    </a>
-                </li>
 
-		<li class="nav-item">
-                    <a href="qr_asistencia.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'qr_asistencia.php' ? 'active' : ''; ?>">
-                        <i class='bx bx-folder'></i>
-                        <span class="link-text">Asistencia QR</span>
-                        <span class="tooltip">Subir/Descargar Archivos</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a href="updo.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'updo.php' ? 'active' : ''; ?>">
-                        <i class='bx bx-folder'></i>
-                        <span class="link-text">Archivos</span>
-                        <span class="tooltip">Subir/Descargar Archivos</span>
-                    </a>
-                </li>
-                
-                <!-- Separador -->
-                <li class="nav-item my-4">
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 0 20px;">
-                </li>
-                
-                <!-- Opciones adicionales -->
-                <li class="nav-item">
-                    <a href="configuracion.php" class="nav-link">
-                        <i class='bx bx-cog'></i>
-                        <span class="link-text">Configuración</span>
-                        <span class="tooltip">Configuración del Sistema</span>
-                    </a>
-                </li>
-                
-                <li class="nav-item">
-                    <a href="perfil.php" class="nav-link">
-                        <i class='bx bx-user'></i>
-                        <span class="link-text">Mi Perfil</span>
-                        <span class="tooltip">Mi Perfil de Usuario</span>
-                    </a>
-                </li>
-            </ul>
-            
-            <!-- Sección de usuario -->
-            <div class="user-section">
-                <a href="logout.php" class="user-link">
-                    <i class='bx bx-log-out-circle' style="font-size: 1.5rem;"></i>
-                    <span class="link-text">Cerrar Sesión</span>
-                    <span class="tooltip">Cerrar Sesión</span>
-                </a>
+<header class="main-header d-flex justify-content-between align-items-center">
+    <a href="main.php" class="btn-back">
+        <i class='bx bx-left-arrow-alt fs-4'></i> 
+        <span>Volver al Panel</span>
+    </a>
+    
+    <div class="d-none d-md-block text-center">
+        <h5 class="fw-bold mb-0">Centro de Inteligencia CECyTE</h5>
+    </div>
+
+    <button class="btn btn-dark px-4 py-2 print-hidden" style="border-radius: 12px; font-weight: 600;" onclick="window.print()">
+        <i class='bx bx-printer me-2'></i> Exportar PDF
+    </button>
+</header>
+
+<div class="content-wrapper">
+    <div class="mb-5">
+        <h2 class="fw-bold mb-1">AnÃ¡lisis de Datos Escolares</h2>
+        <p class="text-muted">EstadÃ­sticas actualizadas basadas en la base de datos central.</p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper icon-blue"><i class='bx bxs-group'></i></div>
+                <span class="stat-value"><?php echo $totalAlumnos; ?></span>
+                <span class="stat-label">MatrÃ­cula Total</span>
             </div>
-        </aside>
-        
-        <!-- Contenido principal -->
-        <div class="content-wrapper">
-            <!-- Header -->
-            <header class="main-header">
-                <div class="d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Sistema de Estadísticas - CECyTE</h5>
-                    <div class="d-flex align-items-center">
-                        <span class="badge bg-success me-3">CECyTE Santa Catarina N.L.</span>
-                        <div class="dropdown">
-                            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown">
-                                <i class='bx bx-user-circle'></i> <?php echo $_SESSION['username'] ?? 'Usuario'; ?>
-                            </button>
-                            <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="perfil.php">Mi Perfil</a></li>
-                                <li><a class="dropdown-item" href="configuracion.php">Configuración</a></li>
-                                <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item text-danger" href="logout.php">Cerrar Sesión</a></li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </header>
-            
-            <!-- Contenido de la página -->
-            <main class="stats-container">
-                <h1 class="page-title">
-                    <i class='bx bx-chart'></i> Sistema de Estadísticas
-                </h1>
-                
-                <!-- Estadísticas principales -->
-                <div class="main-stats-grid">
-                    <div class="stat-card-main alumnos">
-                        <i class="fas fa-user-graduate stat-icon"></i>
-                        <div class="stat-number"><?php echo $totalAlumnos; ?></div>
-                        <div class="stat-label">Total de Alumnos</div>
-                    </div>
-                    
-                    <div class="stat-card-main maestros">
-                        <i class="fas fa-chalkboard-teacher stat-icon"></i>
-                        <div class="stat-number"><?php echo $totalMaestros; ?></div>
-                        <div class="stat-label">Total de Maestros</div>
-                    </div>
-                    
-                    <div class="stat-card-main calificaciones">
-                        <i class="fas fa-check-circle stat-icon"></i>
-                        <div class="stat-number"><?php echo $promedioCalificaciones; ?></div>
-                        <div class="stat-label">Promedio General</div>
-                    </div>
-                    
-                    <div class="stat-card-main estado">
-                        <i class="fas fa-chart-line stat-icon"></i>
-                        <div class="stat-number"><?php echo $alumnosActivos; ?></div>
-                        <div class="stat-label">Alumnos Activos</div>
-                    </div>
-                </div>
-                
-                <!-- Controles de gráficas -->
-                <div class="chart-controls">
-                    <h4 class="chart-title">Tipo de Gráfica</h4>
-                    <div class="chart-type-selector">
-                        <span class="chart-type-label">Seleccionar tipo:</span>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="chartType" id="chartBar" value="bar" checked>
-                            <label class="form-check-label" for="chartBar">Barras</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="chartType" id="chartLine" value="line">
-                            <label class="form-check-label" for="chartLine">Líneas</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="chartType" id="chartPie" value="pie">
-                            <label class="form-check-label" for="chartPie">Pastel</label>
-                        </div>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="chartType" id="chartDoughnut" value="doughnut">
-                            <label class="form-check-label" for="chartDoughnut">Dona</label>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Gráficas principales -->
-                <div class="charts-grid">
-                    <!-- Gráfica 1: Estado de alumnos -->
-                    <div class="chart-wrapper">
-                        <div class="chart-header">
-                            <h5 class="chart-subtitle">Estado de Alumnos y Maestros</h5>
-                            <div class="chart-actions">
-                                <button class="btn-chart-action" onclick="descargarGrafica('chartEstado')">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-chart-action" onclick="imprimirGrafica('chartEstado')">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="chartEstado"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráfica 2: Distribución por género -->
-                    <div class="chart-wrapper">
-                        <div class="chart-header">
-                            <h5 class="chart-subtitle">Distribución de Alumnos por Género</h5>
-                            <div class="chart-actions">
-                                <button class="btn-chart-action" onclick="descargarGrafica('chartGenero')">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-chart-action" onclick="imprimirGrafica('chartGenero')">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="chartGenero"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráfica 3: Alumnos por grupo -->
-                    <div class="chart-wrapper">
-                        <div class="chart-header">
-                            <h5 class="chart-subtitle">Alumnos por Grupo (Top 10)</h5>
-                            <div class="chart-actions">
-                                <button class="btn-chart-action" onclick="descargarGrafica('chartGrupos')">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-chart-action" onclick="imprimirGrafica('chartGrupos')">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="chartGrupos"></canvas>
-                        </div>
-                    </div>
-                    
-                    <!-- Gráfica 4: Asistencia mensual -->
-                    <div class="chart-wrapper">
-                        <div class="chart-header">
-                            <h5 class="chart-subtitle">Asistencia Promedio Mensual</h5>
-                            <div class="chart-actions">
-                                <button class="btn-chart-action" onclick="descargarGrafica('chartAsistencia')">
-                                    <i class="fas fa-download"></i>
-                                </button>
-                                <button class="btn-chart-action" onclick="imprimirGrafica('chartAsistencia')">
-                                    <i class="fas fa-print"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="chart-container">
-                            <canvas id="chartAsistencia"></canvas>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Tabla de estadísticas detalladas -->
-                <div class="stats-table-container">
-                    <h4 class="chart-title mb-4">Estadísticas Detalladas</h4>
-                    <div class="table-responsive">
-                        <table class="table table-stats">
-                            <thead>
-                                <tr>
-                                    <th>Indicador</th>
-                                    <th>Valor</th>
-                                    <th>Descripción</th>
-                                    <th>Tendencia</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Alumnos Totales</td>
-                                    <td><strong><?php echo $totalAlumnos; ?></strong></td>
-                                    <td>Total de alumnos registrados en el sistema</td>
-                                    <td><span class="badge bg-success">+5%</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Alumnos Activos</td>
-                                    <td><strong><?php echo $alumnosActivos; ?></strong></td>
-                                    <td>Alumnos con estatus activo actualmente</td>
-                                    <td><span class="badge bg-success">+3%</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Alumnos Baja Temporal</td>
-                                    <td><strong><?php echo $alumnosBajaTemporal; ?></strong></td>
-                                    <td>Alumnos con estatus de baja temporal</td>
-                                    <td><span class="badge bg-warning">+2%</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Maestros Activos</td>
-                                    <td><strong><?php echo $maestrosActivos; ?></strong></td>
-                                    <td>Maestros con estatus activo actualmente</td>
-                                    <td><span class="badge bg-success">+1%</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Promedio Calificaciones</td>
-                                    <td><strong><?php echo $promedioCalificaciones; ?></strong></td>
-                                    <td>Promedio general de calificaciones</td>
-                                    <td><span class="badge bg-success">+0.5</span></td>
-                                </tr>
-                                <tr>
-                                    <td>Calificaciones Registradas</td>
-                                    <td><strong><?php echo $totalCalificaciones; ?></strong></td>
-                                    <td>Total de calificaciones en el sistema</td>
-                                    <td><span class="badge bg-success">+15%</span></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <!-- Información de actualización -->
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle me-2"></i>
-                    Las estadísticas se actualizan automáticamente cada 30 minutos. Última actualización: <?php echo date('d/m/Y H:i:s'); ?>
-                </div>
-            </main>
-            
-            <!-- Footer -->
-            <footer class="bg-success text-white text-center py-3 mt-5">
-                <div class="container">
-                    <p class="mb-1">CECyTE SANTA CATARINA N.L.</p>
-                    <p class="mb-0">© <?php echo date("Y"); ?> Sistema de Estadísticas. Todos los derechos reservados.</p>
-                </div>
-            </footer>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper icon-green"><i class='bx bxs-user-check'></i></div>
+                <span class="stat-value"><?php echo $alumnosActivos; ?></span>
+                <span class="stat-label">Alumnos Activos</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper icon-orange"><i class='bx bxs-graduation'></i></div>
+                <span class="stat-value"><?php echo $promedioCalificaciones ? round($promedioCalificaciones, 1) : '0'; ?></span>
+                <span class="stat-label">Promedio General</span>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper icon-primary"><i class='bx bxs-briefcase'></i></div>
+                <span class="stat-value"><?php echo $totalMaestros; ?></span>
+                <span class="stat-label">Personal Docente</span>
+            </div>
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
-    <script>
-        // Datos desde PHP (convertidos a JSON)
-        const data = <?php echo $dataJSON; ?>;
-        
-        // Variables para almacenar instancias de gráficas
-        let chartEstado, chartGenero, chartGrupos, chartAsistencia;
-        
-        // Función para inicializar todas las gráficas
-        function inicializarGraficas() {
-            const chartType = document.querySelector('input[name="chartType"]:checked').value;
-            
-            // Destruir gráficas existentes
-            if (chartEstado) chartEstado.destroy();
-            if (chartGenero) chartGenero.destroy();
-            if (chartGrupos) chartGrupos.destroy();
-            if (chartAsistencia) chartAsistencia.destroy();
-            
-            // Crear nuevas gráficas
-            crearGraficaEstado(chartType);
-            crearGraficaGenero(chartType);
-            crearGraficaGrupos(chartType);
-            crearGraficaAsistencia(chartType);
-        }
-        
-        // Función para crear gráfica de estado
-        function crearGraficaEstado(type) {
-            const ctx = document.getElementById('chartEstado').getContext('2d');
-            chartEstado = new Chart(ctx, {
-                type: type,
-                data: {
-                    labels: ['Alumnos Activos', 'Alumnos Baja Temporal', 'Maestros Activos'],
-                    datasets: [{
-                        label: 'Cantidad',
-                        data: [data.alumnosActivos, data.alumnosBajaTemporal, data.maestrosActivos],
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 206, 86, 0.7)',
-                            'rgba(75, 192, 192, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 206, 86, 1)',
-                            'rgba(75, 192, 192, 1)'
-                        ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return `${context.label}: ${context.raw}`;
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Función para crear gráfica de género
-        function crearGraficaGenero(type) {
-            const ctx = document.getElementById('chartGenero').getContext('2d');
-            chartGenero = new Chart(ctx, {
-                type: type,
-                data: {
-                    labels: ['Masculino', 'Femenino', 'No Especificado'],
-                    datasets: [{
-                        label: 'Distribución por Género',
-                        data: [data.generoMasculino, data.generoFemenino, data.generoNoEspecificado],
-                        backgroundColor: [
-                            'rgba(54, 162, 235, 0.7)',
-                            'rgba(255, 99, 132, 0.7)',
-                            'rgba(201, 203, 207, 0.7)'
-                        ],
-                        borderColor: [
-                            'rgba(54, 162, 235, 1)',
-                            'rgba(255, 99, 132, 1)',
-                            'rgba(201, 203, 207, 1)'
-                        ],
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Función para crear gráfica de grupos
-        function crearGraficaGrupos(type) {
-            const ctx = document.getElementById('chartGrupos').getContext('2d');
-            chartGrupos = new Chart(ctx, {
-                type: type === 'pie' || type === 'doughnut' ? 'bar' : type, // Para grupos usamos barras por defecto
-                data: {
-                    labels: data.gruposLabels,
-                    datasets: [{
-                        label: 'Cantidad de Alumnos',
-                        data: data.gruposData,
-                        backgroundColor: 'rgba(153, 102, 255, 0.7)',
-                        borderColor: 'rgba(153, 102, 255, 1)',
-                        borderWidth: 2
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false,
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Cantidad de Alumnos'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Grupos'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Función para crear gráfica de asistencia
-        function crearGraficaAsistencia(type) {
-            const ctx = document.getElementById('chartAsistencia').getContext('2d');
-            chartAsistencia = new Chart(ctx, {
-                type: type === 'pie' || type === 'doughnut' ? 'line' : type,
-                data: {
-                    labels: data.mesesLabels,
-                    datasets: [{
-                        label: 'Asistencia Promedio (%)',
-                        data: data.asistenciaData,
-                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                        borderColor: 'rgba(75, 192, 192, 1)',
-                        borderWidth: 3,
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            title: {
-                                display: true,
-                                text: 'Asistencia (%)'
-                            }
-                        },
-                        x: {
-                            title: {
-                                display: true,
-                                text: 'Mes'
-                            }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // Función para descargar gráfica
-        function descargarGrafica(chartId) {
-            const link = document.createElement('a');
-            link.download = `grafica_${chartId}_${new Date().toISOString().slice(0,10)}.png`;
-            link.href = document.getElementById(chartId).toDataURL('image/png');
-            link.click();
-        }
-        
-        // Función para imprimir gráfica
-        function imprimirGrafica(chartId) {
-            const canvas = document.getElementById(chartId);
-            const win = window.open('');
-            win.document.write('<html><head><title>Imprimir Gráfica</title></head><body>');
-            win.document.write('<img src="' + canvas.toDataURL('image/png') + '"/>');
-            win.document.write('</body></html>');
-            win.document.close();
-            win.print();
-        }
-        
-        // Event listeners para cambio de tipo de gráfica
-        document.querySelectorAll('input[name="chartType"]').forEach(radio => {
-            radio.addEventListener('change', inicializarGraficas);
-        });
-        
-        // Inicializar sidebar
-        document.getElementById('btn-toggle').addEventListener('click', function() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('collapsed');
-            
-            const icon = this;
-            if (sidebar.classList.contains('collapsed')) {
-                icon.classList.remove('bx-menu');
-                icon.classList.add('bx-menu-alt-right');
-            } else {
-                icon.classList.remove('bx-menu-alt-right');
-                icon.classList.add('bx-menu');
-            }
-        });
-        
-        // Resaltar elemento activo en sidebar
-        document.querySelectorAll('.sidebar-menu .nav-link').forEach(link => {
-            link.addEventListener('click', function() {
-                document.querySelectorAll('.sidebar-menu .nav-link').forEach(item => {
-                    item.classList.remove('active');
-                });
-                this.classList.add('active');
-            });
-        });
-        
-        // Auto-colapsar en móviles
-        function handleResize() {
-            const sidebar = document.getElementById('sidebar');
-            if (window.innerWidth <= 768) {
-                sidebar.classList.add('collapsed');
-                document.getElementById('btn-toggle').classList.remove('bx-menu');
-                document.getElementById('btn-toggle').classList.add('bx-menu-alt-right');
-            } else {
-                sidebar.classList.remove('collapsed');
-                document.getElementById('btn-toggle').classList.remove('bx-menu-alt-right');
-                document.getElementById('btn-toggle').classList.add('bx-menu');
+    <div class="row mt-4 g-4">
+        <div class="col-lg-8">
+            <div class="chart-box">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="fw-bold m-0">Tendencia de PoblaciÃ³n</h5>
+                    <select class="form-select form-select-sm w-auto print-hidden" id="chartType" style="border-radius: 8px; background: #f1f5f9; border:none;">
+                        <option value="bar">GrÃ¡fico de Barras</option>
+                        <option value="line">GrÃ¡fico de LÃ­neas</option>
+                    </select>
+                </div>
+                <canvas id="mainChart" style="max-height: 380px;"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="chart-box">
+                <h5 class="fw-bold mb-4">Balance de GÃ©nero</h5>
+                <canvas id="genderChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const data = <?php echo $dataJSON; ?>;
+    const accentColor = '#10b981';
+    const primaryColor = '#064e3b';
+
+    // ConfiguraciÃ³n GrÃ¡fica Principal
+    const ctxMain = document.getElementById('mainChart').getContext('2d');
+    let mainChart = new Chart(ctxMain, {
+        type: 'bar',
+        data: {
+            labels: ['Total Alumnos', 'Alumnos Activos', 'Personal Docente'],
+            datasets: [{
+                label: 'Registros',
+                data: [data.totalAlumnos, data.activos, data.totalMaestros],
+                backgroundColor: [primaryColor, accentColor, '#334155'],
+                borderRadius: 12,
+                barThickness: 50
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { 
+                y: { beginAtZero: true, grid: { color: '#f1f5f9' } },
+                x: { grid: { display: false } }
             }
         }
-        
-        window.addEventListener('resize', handleResize);
-        window.addEventListener('load', handleResize);
-        
-        // Inicializar gráficas al cargar la página
-        document.addEventListener('DOMContentLoaded', function() {
-            inicializarGraficas();
-            
-            // Actualizar estadísticas cada 5 minutos
-            setInterval(() => {
-                console.log('Actualizando estadísticas...');
-                // Aquí podrías hacer una llamada AJAX para actualizar datos
-            }, 300000);
+    });
+
+    // ConfiguraciÃ³n GrÃ¡fica de GÃ©nero
+    const ctxGender = document.getElementById('genderChart').getContext('2d');
+    new Chart(ctxGender, {
+        type: 'doughnut',
+        data: {
+            labels: ['Masculino', 'Femenino'],
+            datasets: [{
+                data: data.genero,
+                backgroundColor: [primaryColor, '#34d399'],
+                borderWidth: 0,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            cutout: '75%',
+            plugins: { 
+                legend: { position: 'bottom', labels: { padding: 20, usePointStyle: true, font: { family: 'Inter', size: 12 } } } 
+            }
+        }
+    });
+
+    // Cambio dinÃ¡mico de tipo de grÃ¡fico
+    document.getElementById('chartType').addEventListener('change', function(e) {
+        const type = e.target.value;
+        const oldData = mainChart.data;
+        mainChart.destroy();
+        mainChart = new Chart(ctxMain, {
+            type: type,
+            data: {
+                labels: oldData.labels,
+                datasets: [{
+                    label: 'Registros',
+                    data: [data.totalAlumnos, data.activos, data.totalMaestros],
+                    borderColor: primaryColor,
+                    backgroundColor: type === 'line' ? 'rgba(16, 185, 129, 0.1)' : [primaryColor, accentColor, '#334155'],
+                    fill: true,
+                    tension: 0.4,
+                    borderRadius: type === 'bar' ? 12 : 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } }
+            }
         });
-    </script>
+    });
+</script>
+
 </body>
 </html>

@@ -35,7 +35,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     
     <style>
         :root {
-            /* MISMOS COLORES QUE EL MAIN PARA COHERENCIA */
             --primary-color: #064e3b;    
             --secondary-color: #065f46;  
             --accent-color: #10b981;     
@@ -50,7 +49,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             margin: 0;
         }
 
-        /* Header con el mismo estilo de línea verde inferior */
         .main-header {
             background: #fff;
             padding: 15px 40px;
@@ -82,7 +80,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
         .registration-container { padding: 40px; }
 
-        /* Tarjetas de Estadísticas */
         .stat-box {
             background: #fff;
             padding: 25px;
@@ -102,7 +99,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
         .stat-icon { font-size: 2.5rem; color: var(--primary-color); opacity: 0.9; }
 
-        /* Grid de Registro */
         .registration-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -151,8 +147,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             transform: rotateY(180deg);
         }
 
-        /* Botones unificados */
         .btn-action {
+            display: inline-block;
+            text-decoration: none;
             background: transparent;
             border: 2px solid var(--primary-color);
             color: var(--primary-color);
@@ -225,28 +222,28 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                     <div class="card-icon-wrapper"><i class="fas fa-user-graduate"></i></div>
                     <h5 class="fw-bold">Alumnos</h5>
                     <p class="text-muted small mb-4">Gestión completa de inscripción y expedientes de alumnos.</p>
-                    <button class="btn btn-action w-100" data-bs-toggle="modal" data-bs-target="#modalAlumnos">Abrir Módulo</button>
+                    <a href="registroalumnos.php" class="btn btn-action w-100">Abrir Módulo</a>
                 </div>
 
                 <div class="registration-card">
                     <div class="card-icon-wrapper"><i class="fas fa-chalkboard-teacher"></i></div>
                     <h5 class="fw-bold">Personal</h5>
                     <p class="text-muted small mb-4">Administración de plantilla docente y administrativa del plantel.</p>
-                    <button class="btn btn-action w-100" data-bs-toggle="modal" data-bs-target="#modalMaestros">Gestionar Personal</button>
+                    <a href="registropersonal.php" class="btn btn-action w-100">Gestionar Personal</a>
                 </div>
 
                 <div class="registration-card">
                     <div class="card-icon-wrapper"><i class="fas fa-file-invoice"></i></div>
                     <h5 class="fw-bold">Calificaciones</h5>
                     <p class="text-muted small mb-4">Registro y consulta de evaluaciones por periodo semestral.</p>
-                    <button class="btn btn-action w-100" data-bs-toggle="modal" data-bs-target="#modalCalificaciones">Subir Notas</button>
+                   <a href="registrocalificaciones.php" class="btn btn-action w-100">Gestionar Personal</a>
                 </div>
 
                 <div class="registration-card">
                     <div class="card-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
                     <h5 class="fw-bold">Horarios</h5>
                     <p class="text-muted small mb-4">Asignación de carga horaria y disponibilidad de aulas.</p>
-                    <button class="btn btn-action w-100" data-bs-toggle="modal" data-bs-target="#modalHorarios">Ver Horarios</button>
+                    <a href="registrohorarios.php" class="btn btn-action w-100">Gestionar Personal</a>
                 </div>
             </div>
         </main>

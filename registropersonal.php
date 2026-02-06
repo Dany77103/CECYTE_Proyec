@@ -1,24 +1,18 @@
 <?php
 session_start();
-// Protección de ruta opcional
-/*
-if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
-    header('Location: index.php');
-    exit;
-}
-*/
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Registro de Personal | CECyTE SC</title>
+    <title>Recursos Humanos | CECyTE SC</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         :root { 
@@ -55,8 +49,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
         .btn-back:hover { background: var(--primary-color); color: white; }
 
-        /* Estilo de Tarjetas */
-        .form-card, .table-card {
+        .form-card {
             background: white;
             border-radius: 24px;
             border: none;
@@ -72,7 +65,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             text-align: center;
         }
 
-        .form-body, .table-body { padding: 40px; }
+        .form-body { padding: 40px; }
 
         .form-label { 
             font-size: 0.75rem; 
@@ -97,13 +90,14 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         }
 
         .section-title {
-            font-size: 0.9rem;
-            font-weight: 700;
+            font-size: 0.85rem;
+            font-weight: 800;
             color: var(--accent-color);
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
+            letter-spacing: 1px;
         }
 
         .section-title::after {
@@ -122,22 +116,17 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             font-weight: 700;
             width: 100%;
             transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         .btn-submit:hover {
             background: #043a2c;
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(6,78,59,0.2);
         }
-
-        .badge-tipo {
-            padding: 5px 10px;
-            border-radius: 6px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .bg-docente { background: rgba(16, 185, 129, 0.1); color: #10b981; }
-        .bg-admin { background: rgba(59, 130, 246, 0.1); color: #3b82f6; }
     </style>
 </head>
 <body>
@@ -156,109 +145,145 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
 <div class="container mb-5">
     <div class="row justify-content-center">
-        <div class="col-lg-10">
+        <div class="col-lg-11">
             
             <div class="form-card animate__animated animate__fadeIn">
                 <div class="form-header">
-                    <i class='bx bx-id-card fs-1 mb-2'></i>
-                    <h3 class="fw-bold mb-0">Registro de Personal</h3>
-                    <p class="opacity-75 mb-0 small">Alta de docentes y personal institucional</p>
+                    <i class='bx bx-user-plus fs-1 mb-2'></i>
+                    <h3 class="fw-bold mb-0">Registro de Colaborador</h3>
+                    <p class="opacity-75 mb-0 small">Sincronizado con tabla: <b>maestros</b></p>
                 </div>
                 
                 <div class="form-body">
                     <form id="formRegistroPersonal">
-                        <div class="section-title">DATOS GENERALES</div>
+                        
+                        <div class="section-title">INFORMACIÓN DE IDENTIDAD</div>
                         <div class="row g-3 mb-4">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
+                                <label class="form-label">Número de Empleado</label>
+                                <input type="text" name="numEmpleado" class="form-control" placeholder="Ej: M210" required>
+                            </div>
+                            <div class="col-md-3">
                                 <label class="form-label">Nombre(s)</label>
-                                <input type="text" class="form-control" placeholder="Nombre del empleado">
+                                <input type="text" name="nombre" class="form-control" required>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Apellidos</label>
-                                <input type="text" class="form-control" placeholder="Apellidos completos">
+                            <div class="col-md-3">
+                                <label class="form-label">Ap. Paterno</label>
+                                <input type="text" name="apellidoPaterno" class="form-control" required>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">RFC</label>
-                                <input type="text" class="form-control" placeholder="RFC con homoclave">
+                            <div class="col-md-3">
+                                <label class="form-label">Ap. Materno</label>
+                                <input type="text" name="apellidoMaterno" class="form-control">
                             </div>
                         </div>
 
-                        <div class="section-title">DETALLES DEL PUESTO</div>
-                        <div class="row g-3 mb-5">
-                            <div class="col-md-4">
-                                <label class="form-label">Tipo de Personal</label>
-                                <select class="form-select">
-                                    <option selected disabled>Seleccionar tipo...</option>
-                                    <option value="Docente">Docente / Maestro</option>
-                                    <option value="Administrativo">Personal Administrativo</option>
-                                    <option value="Directivo">Directivo</option>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label">RFC</label>
+                                <input type="text" name="rfc" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">CURP</label>
+                                <input type="text" name="curp" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Fecha Nacimiento</label>
+                                <input type="date" name="fechaNacimiento" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Género</label>
+                                <select name="id_genero" class="form-select">
+                                    <option value="1">Masculino</option>
+                                    <option value="2">Femenino</option>
+                                    <option value="3">Otro</option>
                                 </select>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Área / Departamento</label>
-                                <input type="text" class="form-control" placeholder="Ej: Ciencias Exactas">
+                        </div>
+
+                        <div class="section-title">NACIONALIDAD Y ORIGEN</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Nacionalidad</label>
+                                <select name="id_nacionalidad" class="form-select" required>
+                                    <option value="1">Mexicana</option>
+                                    <option value="3">Extranjera</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Estado de Nacimiento</label>
+                                <select name="id_estadoNacimiento" class="form-select">
+                                    <option value="4">San Luis Potosí</option>
+                                    <option value="19">Nuevo León</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="section-title">CONTACTO Y DOMICILIO</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label">Dirección Particular</label>
+                                <input type="text" name="direccion" class="form-control" placeholder="Calle, Número y Colonia">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Fecha de Ingreso</label>
-                                <input type="date" class="form-control">
+                                <label class="form-label">Tel. Emergencia</label>
+                                <input type="text" name="telefonoEmergencia" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-5">
+                            <div class="col-md-4">
+                                <label class="form-label">Correo Institucional</label>
+                                <input type="email" name="mailInstitucional" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Correo Personal</label>
+                                <input type="email" name="mailPersonal" class="form-control">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Celular</label>
+                                <input type="text" name="numCelular" class="form-control">
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 offset-md-3">
-                                <button type="button" class="btn-submit" onclick="alert('Módulo de personal en construcción')">
-                                    <i class='bx bx-user-check'></i> Registrar Colaborador
+                                <button type="submit" class="btn-submit">
+                                    <i class='bx bx-save'></i> Guardar Colaborador
                                 </button>
                             </div>
                         </div>
                     </form>
                 </div>
             </div>
-
-            <div class="table-card animate__animated animate__fadeInUp">
-                <div class="p-4 border-bottom bg-light">
-                    <h5 class="fw-bold mb-0">Personal Registrado</h5>
-                </div>
-                <div class="table-body">
-                    <div class="table-responsive">
-                        <table class="table table-hover align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>RFC</th>
-                                    <th>Nombre</th>
-                                    <th>Tipo</th>
-                                    <th>Área</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="small fw-bold">HERM850101XX1</td>
-                                    <td>Ing. Mario Hernández</td>
-                                    <td><span class="badge-tipo bg-docente">Docente</span></td>
-                                    <td>Programación</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-success"><i class='bx bx-edit'></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="small fw-bold">GAML900512YY2</td>
-                                    <td>Lic. Lucía García</td>
-                                    <td><span class="badge-tipo bg-admin">Administrativo</span></td>
-                                    <td>Control Escolar</td>
-                                    <td>
-                                        <button class="btn btn-sm btn-outline-success"><i class='bx bx-edit'></i></button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('formRegistroPersonal').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const formData = new FormData(this);
+
+    fetch('guardar_maestro.php', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        // Mostramos el anuncio de éxito de inmediato
+        Swal.fire({
+            title: '¡Colaborador Registrado!',
+            text: 'La información se ha guardado correctamente en la base de datos.',
+            icon: 'success',
+            confirmButtonColor: '#064e3b'
+        });
+        this.reset(); // Limpiar formulario
+    })
+    .catch(error => {
+        Swal.fire('Error', 'Hubo un problema al conectar con el servidor', 'error');
+    });
+});
+</script>
 
 </body>
 </html>

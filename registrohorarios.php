@@ -1,143 +1,135 @@
 <?php
+// 1. CONEXIÓN USANDO TU ARCHIVO REAL
+require 'conexion.php'; 
 session_start();
 
-$materias = [
-    ['id' => 1, 'nombre' => 'Base de Datos', 'profe' => 'Ing. Mario Hdez', 'aula' => 'Lab 2', 'color' => '#dcfce7'],
-    ['id' => 2, 'nombre' => 'Desarrollo Web', 'profe' => 'Ing. R. Silva', 'aula' => 'Lab 1', 'color' => '#dbeafe'],
-    ['id' => 3, 'nombre' => 'Cálculo Integral', 'profe' => 'Ing. P. Gómez', 'aula' => 'Aula 3', 'color' => '#fef9c3'],
-    ['id' => 4, 'nombre' => 'Inglés IV', 'profe' => 'Lic. Ana Ruiz', 'aula' => 'Aula 5', 'color' => '#ffedd5'],
-    ['id' => 5, 'nombre' => 'Ecología', 'profe' => 'Biol. Morales', 'aula' => 'Aula 12', 'color' => '#f3e8ff'],
+// 2. OBTENER MATERIAS REALES DE LA BASE DE DATOS
+$materias = [];
+try {
+    $stmt_mat = $con->prepare("SELECT id_materia as id, nombre, aula FROM materias");
+    $stmt_mat->execute();
+    while($row = $stmt_mat->fetch(PDO::FETCH_ASSOC)) { 
+        $colores = ['#dcfce7', '#dbeafe', '#fef9c3', '#ffedd5', '#f3e8ff'];
+        $row['color'] = $colores[$row['id'] % 5]; 
+        $materias[] = $row; 
+    }
+} catch (PDOException $e) {
+    echo "Error al cargar materias: " . $e->getMessage();
+}
+
+// 3. CONFIGURACIÓN DE BLOQUES
+$bloques_config = [
+    0 => ["label" => "11:45 - 12:45", "inicio" => "11:45:00", "fin" => "12:45:00"],
+    1 => ["label" => "12:45 - 13:45", "inicio" => "12:45:00", "fin" => "13:45:00"],
+    2 => ["label" => "13:45 - 14:45", "inicio" => "13:45:00", "fin" => "14:45:00"],
+    3 => ["label" => "RECESO",       "inicio" => "14:45:00", "fin" => "15:15:00"],
+    4 => ["label" => "15:15 - 16:15", "inicio" => "15:15:00", "fin" => "16:15:00"],
+    5 => ["label" => "16:15 - 17:15", "inicio" => "16:15:00", "fin" => "17:15:00"],
+    6 => ["label" => "17:15 - 17:50", "inicio" => "17:15:00", "fin" => "17:50:00"]
 ];
 
-$bloques = [
-    "11:45 - 12:45",
-    "12:45 - 13:45",
-    "13:45 - 14:45",
-    "14:45 - 15:15", // Receso
-    "15:15 - 16:15",
-    "16:15 - 17:15",
-    "17:15 - 17:50"
-];
+$dias_nombres = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+$id_grupo_actual = 1; // ID fijo para tus pruebas
 
-$dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
+// --- NUEVO: CARGAR HORARIO GUARDADO ---
+$horario_guardado = [];
+try {
+    $stmt_view = $con->prepare("SELECT id_materia, dia, hora_inicio FROM horarios WHERE id_grupo = ?");
+    $stmt_view->execute([$id_grupo_actual]);
+    while($h = $stmt_view->fetch(PDO::FETCH_ASSOC)) {
+        // Guardamos en un array multidimensional [HORA][DIA]
+        $horario_guardado[$h['hora_inicio']][$h['dia']] = $h['id_materia'];
+    }
+} catch (PDOException $e) { /* Manejar error */ }
+
+
+// 4. LÓGICA DE GUARDADO
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btn_guardar'])) {
+    try {
+        $con->beginTransaction();
+        $con->exec("DELETE FROM horarios WHERE id_grupo = $id_grupo_actual");
+        $stmt_ins = $con->prepare("INSERT INTO horarios (id_materia, id_grupo, dia, hora_inicio, hora_fin) VALUES (?, ?, ?, ?, ?)");
+
+        if(isset($_POST['materia_id'])) {
+            foreach ($_POST['materia_id'] as $b_idx => $dias_data) {
+                if ($b_idx == 3) continue; // Saltar el receso
+                foreach ($dias_data as $d_idx => $id_materia) {
+                    if (!empty($id_materia)) {
+                        $dia_texto = $dias_nombres[$d_idx];
+                        $h_inicio = $bloques_config[$b_idx]['inicio'];
+                        $h_fin = $bloques_config[$b_idx]['fin'];
+                        $stmt_ins->execute([$id_materia, $id_grupo_actual, $dia_texto, $h_inicio, $h_fin]);
+                    }
+                }
+            }
+        }
+        $con->commit();
+        echo "<script>alert('¡Horario guardado correctamente!'); window.location.href='registrohorarios.php';</script>";
+    } catch (PDOException $e) {
+        $con->rollBack();
+        echo "Error al guardar: " . $e->getMessage();
+    }
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Captura y Vista de Horarios | CECyTE SC</title>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <title>Captura de Horarios | CECyTE SC</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-
     <style>
         :root { --primary-color: #064e3b; --accent-color: #10b981; --bg-body: #f1f5f9; }
-        body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; color: #1e293b; }
-        
-        /* Botón Regresar Personalizado */
-        .btn-back-home {
-            background: white;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-            padding: 8px 18px;
-            border-radius: 12px;
-            font-weight: 600;
-            text-decoration: none;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .btn-back-home:hover {
-            background: var(--primary-color);
-            color: white;
-            transform: translateX(-5px);
-        }
-
-        .section-title { font-weight: 700; color: var(--primary-color); display: flex; align-items: center; gap: 10px; }
-        .glass-card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: none; padding: 25px; margin-bottom: 30px; }
-        
-        /* Selectores de Captura */
-        .table-capture th { font-size: 0.7rem; text-transform: uppercase; color: #64748b; text-align: center; }
-        .slot-selector {
-            border: 2px solid #f1f5f9;
-            background: #f8fafc;
-            font-size: 0.75rem;
-            width: 100%;
-            padding: 8px;
-            border-radius: 10px;
-            transition: 0.3s;
-        }
-        .slot-selector:focus { border-color: var(--accent-color); outline: none; background: white; }
-
-        /* Tabla de Vista Previa */
-        .table-view { width: 100%; border-collapse: separate; border-spacing: 8px; }
-        .table-view th { color: #64748b; font-size: 0.8rem; text-align: center; padding: 10px; }
-        .table-view td { 
-            background: #fff; 
-            border-radius: 12px; 
-            height: 90px; 
-            width: 18%; 
-            vertical-align: middle; 
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            transition: all 0.4s ease;
-        }
-
-        .view-time { background: #f8fafc !important; font-weight: 700; color: var(--primary-color); font-size: 0.75rem; width: 10% !important; border: none !important; }
-        .preview-block { padding: 5px; animation: fadeIn 0.5s; }
-        .preview-subject { font-weight: 700; font-size: 0.75rem; color: var(--primary-color); display: block; line-height: 1.2; }
-        .preview-room { font-size: 0.65rem; color: #64748b; margin-top: 4px; display: block; }
-        .receso-bar { background: #f1f5f9 !important; font-weight: 800; letter-spacing: 10px; color: #cbd5e1; font-size: 0.7rem; height: 40px !important; border: none !important;}
-
-        .btn-capture {
-            background: var(--primary-color); color: white; border: none; padding: 12px 35px;
-            border-radius: 12px; font-weight: 700; transition: 0.3s;
-        }
-        .btn-capture:hover { background: var(--accent-color); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(16, 185, 129, 0.3); }
+        body { background-color: var(--bg-body); font-family: 'Inter', sans-serif; }
+        .glass-card { background: white; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); padding: 25px; margin-bottom: 30px; }
+        .slot-selector { border: 2px solid #f1f5f9; background: #f8fafc; font-size: 0.75rem; width: 100%; padding: 8px; border-radius: 10px; cursor: pointer; }
+        .table-view td { background: #fff; border-radius: 12px; height: 80px; text-align: center; border: 1px solid #e2e8f0; vertical-align: middle; transition: 0.3s; }
+        .view-time { font-weight: 700; color: var(--primary-color); font-size: 0.75rem; background: #f8fafc !important; }
+        .btn-capture { background: var(--primary-color); color: white; border: none; padding: 12px 35px; border-radius: 12px; font-weight: 700; transition: 0.3s; width: 100%; }
+        .btn-capture:hover { background: var(--accent-color); transform: translateY(-2px); }
     </style>
 </head>
 <body>
 
 <div class="container py-4">
-    
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <div class="section-title">
-            <i class='bx bxs-edit-alt fs-2'></i> 
-            <h3 class="mb-0">Gestor de Horarios Vespertinos</h3>
-        </div>
-        <a href="main.php" class="btn-back-home">
-            <i class='bx bx-arrow-back'></i> Regresar al Menú
-        </a>
+        <h3 class="fw-bold text-success"><i class='bx bxs-calendar-plus'></i> Captura de Horarios</h3>
+        <a href="main.php" class="btn btn-outline-dark rounded-pill shadow-sm"><i class='bx bx-arrow-back'></i> Menú Principal</a>
     </div>
 
-    <div class="glass-card animate__animated animate__fadeIn">
-        <p class="text-muted small mb-4"><i class='bx bx-info-circle'></i> Selecciona las materias en cada bloque para ver la vista previa debajo.</p>
-        <form id="horarioForm">
+    <div class="glass-card">
+        <form method="POST">
             <div class="table-responsive">
-                <table class="table table-borderless align-middle table-capture">
-                    <thead>
+                <table class="table table-borderless align-middle">
+                    <thead class="text-center text-muted small">
                         <tr>
-                            <th style="width: 140px;">Rango Horario</th>
-                            <?php foreach($dias as $dia): ?> <th><?php echo $dia; ?></th> <?php endforeach; ?>
+                            <th>BLOQUE</th>
+                            <?php foreach($dias_nombres as $d): ?> <th><?php echo $d; ?></th> <?php endforeach; ?>
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach($bloques as $idx => $hora): ?>
+                        <?php foreach($bloques_config as $idx => $bloque): ?>
                             <?php if($idx == 3): ?>
-                                <tr class="text-center"><td colspan="6" class="py-3 bg-light rounded-4 small text-muted fw-bold">-- INTERVALO DE RECESO --</td></tr>
+                                <tr class="text-center"><td colspan="6" class="py-2 bg-light rounded-pill small text-muted">-- RECESO --</td></tr>
                             <?php else: ?>
                                 <tr>
-                                    <td class="fw-bold small text-success"><?php echo $hora; ?></td>
+                                    <td class="small fw-bold text-success text-center"><?php echo $bloque['label']; ?></td>
                                     <?php for($d=0; $d<5; $d++): ?>
                                     <td>
-                                        <select class="slot-selector" data-hora="<?php echo $idx; ?>" data-dia="<?php echo $d; ?>" onchange="updatePreview(this)">
+                                        <select name="materia_id[<?php echo $idx; ?>][<?php echo $d; ?>]" 
+                                                class="slot-selector" 
+                                                data-hora="<?php echo $idx; ?>" 
+                                                data-dia="<?php echo $d; ?>" 
+                                                onchange="updatePreview(this)">
                                             <option value="">Vacío</option>
                                             <?php foreach($materias as $m): ?>
-                                                <option value="<?php echo $m['id']; ?>" 
+                                                <?php 
+                                                  $h_ini = $bloque['inicio'];
+                                                  $d_nom = $dias_nombres[$d];
+                                                  $isSelected = (isset($horario_guardado[$h_ini][$d_nom]) && $horario_guardado[$h_ini][$d_nom] == $m['id']) ? 'selected' : '';
+                                                ?>
+                                                <option value="<?php echo $m['id']; ?>" <?php echo $isSelected; ?>
                                                         data-nombre="<?php echo $m['nombre']; ?>" 
                                                         data-aula="<?php echo $m['aula']; ?>" 
                                                         data-color="<?php echo $m['color']; ?>">
@@ -153,42 +145,32 @@ $dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
                     </tbody>
                 </table>
             </div>
-            <div class="text-end mt-4">
-                <button type="button" class="btn-capture" onclick="alert('Horario capturado con éxito')">
-                    <i class='bx bx-save me-1'></i> Finalizar Captura
-                </button>
+            <div class="row mt-3">
+                <div class="col-md-4 offset-md-8">
+                    <button type="submit" name="btn_guardar" class="btn-capture">
+                        <i class='bx bx-save'></i> GUARDAR HORARIO
+                    </button>
+                </div>
             </div>
         </form>
     </div>
 
-    <div class="section-title mb-3">
-        <i class='bx bx-calendar-check fs-3'></i> 
-        <span>Vista Previa del Horario</span>
-    </div>
-
-    <div class="glass-card animate__animated animate__fadeInUp">
+    <div class="glass-card">
+        <h6 class="fw-bold text-muted mb-4 text-center">VISTA PREVIA DEL HORARIO</h6>
         <div class="table-responsive">
-            <table class="table-view" id="horarioPreview">
-                <thead>
-                    <tr>
-                        <th>Hora</th>
-                        <?php foreach($dias as $dia): ?> <th><?php echo $dia; ?></th> <?php endforeach; ?>
-                    </tr>
-                </thead>
+            <table class="table-view w-100" style="border-collapse: separate; border-spacing: 10px;">
                 <tbody>
-                    <?php foreach($bloques as $idx => $hora): ?>
+                    <?php foreach($bloques_config as $idx => $bloque): ?>
                         <?php if($idx == 3): ?>
                             <tr>
                                 <td class="view-time">14:45</td>
-                                <td colspan="5" class="receso-bar">RECESO</td>
+                                <td colspan="5" style="background:#f1f5f9; border:none; letter-spacing:10px; color:#cbd5e1; font-size:0.7rem;">RECESO</td>
                             </tr>
                         <?php else: ?>
                             <tr>
-                                <td class="view-time"><?php echo explode(' ', $hora)[0]; ?></td>
+                                <td class="view-time" style="width:10%"><?php echo substr($bloque['inicio'],0,5); ?></td>
                                 <?php for($d=0; $d<5; $d++): ?>
-                                    <td id="preview-<?php echo $idx; ?>-<?php echo $d; ?>">
-                                        <span class="text-muted small" style="opacity: 0.2;">--</span>
-                                    </td>
+                                    <td id="preview-<?php echo $idx; ?>-<?php echo $d; ?>" style="width:18%">--</td>
                                 <?php endfor; ?>
                             </tr>
                         <?php endif; ?>
@@ -200,35 +182,39 @@ $dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
 </div>
 
 <script>
-    // Función para actualizar la tabla de abajo en tiempo real
     function updatePreview(select) {
-        const hora = select.getAttribute('data-hora');
-        const dia = select.getAttribute('data-dia');
-        const targetId = `preview-${hora}-${dia}`;
-        const targetCell = document.getElementById(targetId);
+        const hora = select.dataset.hora;
+        const dia = select.dataset.dia;
+        const target = document.getElementById(`preview-${hora}-${dia}`);
+        if(!target) return;
         
-        const selectedOption = select.options[select.selectedIndex];
+        const opt = select.options[select.selectedIndex];
         
         if (select.value === "") {
-            targetCell.innerHTML = '<span class="text-muted small" style="opacity: 0.2;">--</span>';
-            targetCell.style.backgroundColor = "#fff";
-            targetCell.style.borderColor = "#e2e8f0";
+            target.innerHTML = "--";
+            target.style.backgroundColor = "#fff";
+            target.style.border = "1px solid #e2e8f0";
         } else {
-            const nombre = selectedOption.getAttribute('data-nombre');
-            const aula = selectedOption.getAttribute('data-aula');
-            const color = selectedOption.getAttribute('data-color');
-            
-            targetCell.style.backgroundColor = color;
-            targetCell.style.borderColor = color;
-            targetCell.innerHTML = `
-                <div class="preview-block animate__animated animate__pulse">
-                    <span class="preview-subject">${nombre}</span>
-                    <span class="preview-room"><i class='bx bx-map-pin'></i> ${aula}</span>
+            target.style.backgroundColor = opt.dataset.color;
+            target.style.border = `2px solid ${opt.dataset.color}`;
+            target.innerHTML = `
+                <div style="padding: 5px;">
+                    <b style="font-size:0.75rem; color:#064e3b; display:block; line-height:1.1;">${opt.dataset.nombre}</b>
+                    <small style="font-size:0.65rem; color:#475569; display:block; margin-top:4px;"><i class='bx bx-map-pin'></i> ${opt.dataset.aula}</small>
                 </div>
             `;
         }
     }
-</script>
 
+    // Al cargar la página, ejecutar la vista previa para los elementos ya guardados
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectors = document.querySelectorAll('.slot-selector');
+        selectors.forEach(select => {
+            if(select.value !== "") {
+                updatePreview(select);
+            }
+        });
+    });
+</script>
 </body>
 </html>

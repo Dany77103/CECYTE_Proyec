@@ -1,5 +1,5 @@
 <?php
-// Conexión a la base de datos
+// Conexiï¿½n a la base de datos
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -8,7 +8,7 @@ $dbname = "cecyte_sc";
 $conn = new mysqli($servername, $username, $password, $dbname);
 
 if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
+    die("Conexiï¿½n fallida: " . $conn->connect_error);
 }
 
 // Recuperar datos del formulario

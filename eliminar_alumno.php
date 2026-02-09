@@ -1,47 +1,74 @@
 <?php
 require_once 'conexion.php';
 
-// DepuraciÛn: Verifica si el par·metro est· llegando correctamente
 if (isset($_GET['id_alumno'])) {
-    $id = $_GET['id_alumno'];
-    echo "Matricula recibida: " . htmlspecialchars($id) . "<br>"; // DepuraciÛn
-
-    $sql = "DELETE FROM alumnos WHERE id_alumno = :id";
-
+    $id_numerico = $_GET['id_alumno'];
+    
     try {
-        $stmt = $con->prepare($sql);
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt->execute();
+        $con->beginTransaction();
 
-        if ($stmt->rowCount() > 0) {
-            echo "Registro eliminado correctamente.";
+        // 1. Buscamos la matr√≠cula de texto (A1, A2, etc.) en la tabla 'alumnos'
+        // Usamos 'id_alumno' que es tu PK en esa tabla.
+        $stmt_info = $con->prepare("SELECT matriculaAlumno FROM alumnos WHERE id_alumno = :id");
+        $stmt_info->execute([':id' => $id_numerico]);
+        $alumno = $stmt_info->fetch(PDO::FETCH_ASSOC);
+
+        if ($alumno) {
+            $mat = $alumno['matriculaAlumno'];
+
+            // 2. Borrar de 'historialacademicoalumnos'
+            // Tu imagen confirma que la columna es 'matriculaAlumno'
+            $stmt1 = $con->prepare("DELETE FROM historialacademicoalumnos WHERE matriculaAlumno = :mat");
+            $stmt1->execute([':mat' => $mat]);
+
+            // 3. Borrar de 'qralumnos' 
+            // Tu imagen confirma que aqu√≠ la columna se llama 'matricula' (a secas)
+            $stmt2 = $con->prepare("DELETE FROM qralumnos WHERE matricula = :mat");
+            $stmt2->execute([':mat' => $mat]);
+
+            // 4. Borrar finalmente de 'alumnos'
+            $stmt3 = $con->prepare("DELETE FROM alumnos WHERE id_alumno = :id");
+            $stmt3->execute([':id' => $id_numerico]);
+
+            $con->commit();
+            $mensaje = "√âxito: Alumno con matr√≠cula $mat eliminado correctamente.";
         } else {
-            echo "No se encontrÛ el registro con la matrÌcula proporcionada.";
+            $con->rollBack();
+            $mensaje = "No se encontr√≥ el alumno con ID $id_numerico.";
         }
+
     } catch (PDOException $e) {
-        echo "Error al eliminar el registro:     est·s intentando eliminar un registro de la tabla alumnos que tiene la matrÌcula igual, pero hay registros en la tabla historialacademicoalumnos que est·n relacionados con esa matrÌcula" . $e->getMessage();
+        if ($con->inTransaction()) {
+            $con->rollBack();
+        }
+        $mensaje = "Error de SQL: " . $e->getMessage();
     }
 } else {
-    echo "ID no proporcionado.";
+    $mensaje = "No se recibi√≥ el ID.";
 }
-
-// Cerrar la conexiÛn asignando null a la variable
 $con = null;
 ?>
 
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Eliminado completo</title>
-    <link rel="shortcut icon" href="img/favicon.ico" type="img/x-icon">
-    <link rel="stylesheet" href="styles.css">
+    <title>Resultado de Eliminaci√≥n</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; font-family: sans-serif; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 20px rgba(0,0,0,0.08); padding: 30px; text-align: center; max-width: 450px; background: white; }
+        .btn-return { background-color: #166534; color: white; border-radius: 8px; padding: 10px 20px; text-decoration: none; display: inline-block; transition: 0.2s; }
+        .btn-return:hover { background-color: #15803d; color: white; }
+    </style>
 </head>
 <body>
-    <!-- BotÛn que regresa anteriormente al inicio -->
-    <div class="button-container">
-        <a href="reportes.php" class="btn-agregar">Regresa a la pagina anterior</a>
+    <div class="card">
+        <h4 style="color: #166534;">Proceso Finalizado</h4>
+        <div class="alert <?php echo strpos($mensaje, 'Error') !== false ? 'alert-danger' : 'alert-success'; ?> my-4">
+            <?php echo $mensaje; ?>
+        </div>
+        <a href="reportes.php" class="btn btn-return">Regresar a Reportes</a>
     </div>
 </body>
 </html>

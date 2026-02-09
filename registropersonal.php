@@ -151,7 +151,7 @@ session_start();
                 <div class="form-header">
                     <i class='bx bx-user-plus fs-1 mb-2'></i>
                     <h3 class="fw-bold mb-0">Registro de Colaborador</h3>
-                    <p class="opacity-75 mb-0 small">Sincronizado con tabla: <b>maestros</b></p>
+                    <p class="opacity-75 mb-0 small">Sincronizado con tabla: <b>personal_institucional</b></p>
                 </div>
                 
                 <div class="form-body">
@@ -214,6 +214,9 @@ session_start();
                                 <select name="id_estadoNacimiento" class="form-select">
                                     <option value="4">San Luis Potosí</option>
                                     <option value="19">Nuevo León</option>
+                                    <option value="1">Aguascalientes</option>
+                                    <option value="5">Coahuila</option>
+                                    <option value="33">Otro</option>
                                 </select>
                             </div>
                         </div>
@@ -230,7 +233,7 @@ session_start();
                             </div>
                         </div>
 
-                        <div class="row g-3 mb-5">
+                        <div class="row g-3 mb-4">
                             <div class="col-md-4">
                                 <label class="form-label">Correo Institucional</label>
                                 <input type="email" name="mailInstitucional" class="form-control">
@@ -242,6 +245,30 @@ session_start();
                             <div class="col-md-4">
                                 <label class="form-label">Celular</label>
                                 <input type="text" name="numCelular" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="section-title">DATOS LABORALES</div>
+                        <div class="row g-3 mb-5">
+                            <div class="col-md-6">
+                                <label class="form-label">Rol / Función en el Plantel</label>
+                                <select name="id_rol" class="form-select" required>
+                                    <option value="" selected disabled>Seleccione un rol...</option>
+                                    <option value="1">Maestro(a)</option>
+                                    <option value="2">Administrativo(a)</option>
+                                    <option value="3">Conserje / Intendencia</option>
+                                    <option value="4">Directivo(a)</option>
+                                    <option value="5">Prefecto(a)</option>
+                                    <option value="6">Seguridad</option>
+                                    <option value="7">Otro personal de apoyo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Estatus Laboral</label>
+                                <select name="estatus" class="form-select">
+                                    <option value="Activo">Activo</option>
+                                    <option value="Inactivo">Inactivo / Licencia</option>
+                                </select>
                             </div>
                         </div>
 
@@ -265,19 +292,18 @@ document.getElementById('formRegistroPersonal').addEventListener('submit', funct
 
     const formData = new FormData(this);
 
-    fetch('guardar_maestro.php', {
+    fetch('guardar_maestro.php', { // Asegúrate de actualizar este archivo para recibir 'id_rol'
         method: 'POST',
         body: formData
     })
     .then(response => {
-        // Mostramos el anuncio de éxito de inmediato
         Swal.fire({
             title: '¡Colaborador Registrado!',
             text: 'La información se ha guardado correctamente en la base de datos.',
             icon: 'success',
             confirmButtonColor: '#064e3b'
         });
-        this.reset(); // Limpiar formulario
+        this.reset(); 
     })
     .catch(error => {
         Swal.fire('Error', 'Hubo un problema al conectar con el servidor', 'error');

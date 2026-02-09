@@ -48,7 +48,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             color: #1e293b;
         }
 
-        /* Header Consistente */
         .main-header {
             background: #fff;
             padding: 15px 40px;
@@ -90,7 +89,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             letter-spacing: -0.025em;
         }
 
-        /* Tarjetas de Reportes Estilo Unificado */
         .card-report {
             background: white;
             border: none;
@@ -100,7 +98,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             height: 100%;
             transition: var(--transition);
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
-            border-bottom: 4px solid transparent;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -109,7 +106,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         .card-report:hover {
             transform: translateY(-10px);
             box-shadow: 0 15px 30px rgba(6, 78, 59, 0.1);
-            border-bottom: 4px solid var(--accent-color);
         }
 
         .card-icon-circle {
@@ -123,44 +119,26 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             font-size: 2.2rem;
             background: var(--bg-light);
             color: var(--primary-color);
-            transition: var(--transition);
         }
 
-        .card-report:hover .card-icon-circle {
-            background: var(--primary-color);
-            color: white;
-            transform: scale(1.1);
-        }
-
-        .card-report h5 {
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 12px;
-        }
-
-        .card-report p {
-            font-size: 0.9rem;
-            color: #64748b;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        }
-
-        /* Botón de Reporte Unificado */
         .btn-report {
             background: transparent;
             border: 2px solid var(--primary-color);
             color: var(--primary-color);
             border-radius: 12px;
-            padding: 10px 20px;
+            padding: 12px 20px;
             font-weight: 600;
             width: 100%;
             transition: var(--transition);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .btn-report:hover {
             background: var(--primary-color);
             color: white;
-            box-shadow: 0 4px 12px rgba(6, 78, 59, 0.2);
         }
 
         footer {
@@ -182,7 +160,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             </a>
             <div class="d-flex align-items-center gap-3">
                 <div class="text-end d-none d-md-block">
-                    <span class="d-block small text-muted">Sesión de Reportes</span>
+                    <span class="d-block small text-muted">Módulo Escolar</span>
                     <span class="fw-bold" style="color: var(--primary-color);"><?php echo $_SESSION['username'] ?? 'Usuario'; ?></span>
                 </div>
                 <img src="https://ui-avatars.com/api/?name=Admin&background=064e3b&color=fff" class="rounded-circle border border-2 border-success" width="40">
@@ -192,18 +170,19 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
     <div class="main-content">
         <div class="mb-5">
-            <span class="badge mb-2 px-3 py-2 rounded-pill" style="background: var(--accent-color);">Módulo de Exportación</span>
+            <span class="badge mb-2 px-3 py-2 rounded-pill" style="background: var(--accent-color);">Control Administrativo</span>
             <h1 class="page-title">Centro de Documentación y Reportes</h1>
-            <p class="text-muted">Genera archivos oficiales y consultas detalladas del sistema.</p>
+            <p class="text-muted">Generación de reportes oficiales y gestión de información educativa.</p>
         </div>
 
         <div class="row g-4">
+            
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card-report">
                     <div>
-                        <div class="card-icon-circle"><i class="fas fa-users"></i></div>
-                        <h5>Reporte de Alumnos</h5>
-                        <p>Documentación detallada de la matrícula escolar con filtros por grado y grupo.</p>
+                        <div class="card-icon-circle"><i class="fas fa-user-graduate"></i></div>
+                        <h5>Reportes de Alumnos</h5>
+                        <p>Obtenga listas de asistencia, matrículas por grado y expedientes de alumnos.</p>
                     </div>
                     <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteAlumnos">
                         <i class='bx bx-file-find me-2'></i>Generar Reporte
@@ -215,8 +194,8 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                 <div class="card-report">
                     <div>
                         <div class="card-icon-circle"><i class="fas fa-chalkboard-teacher"></i></div>
-                        <h5>Reporte de Maestros</h5>
-                        <p>Información profesional, contacto y asignaciones de la plantilla docente.</p>
+                        <h5>Reportes de Maestros</h5>
+                        <p>Genere documentos sobre la plantilla docente y sus asignaciones actuales.</p>
                     </div>
                     <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteMaestros">
                         <i class='bx bx-file-find me-2'></i>Generar Reporte
@@ -227,50 +206,11 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card-report">
                     <div>
-                        <div class="card-icon-circle"><i class="fas fa-check-circle"></i></div>
-                        <h5>Calificaciones</h5>
-                        <p>Sábanas de notas y promedios por periodo académico y materias.</p>
+                        <div class="card-icon-circle"><i class="fas fa-user-tie"></i></div>
+                        <h5>Reportes de Personal</h5>
+                        <p>Documentación de administrativos, intendencia y personal de apoyo.</p>
                     </div>
-                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteCalificaciones">
-                        <i class='bx bx-file-find me-2'></i>Generar Reporte
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card-report">
-                    <div>
-                        <div class="card-icon-circle"><i class="fas fa-briefcase"></i></div>
-                        <h5>Académico Docente</h5>
-                        <p>Perfil académico detallado, especialidades y formación profesional.</p>
-                    </div>
-                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteDatosAcademicosMaestros">
-                        <i class='bx bx-file-find me-2'></i>Generar Reporte
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card-report">
-                    <div>
-                        <div class="card-icon-circle"><i class="fas fa-calendar-alt"></i></div>
-                        <h5>Reporte de Horarios</h5>
-                        <p>Gestión visual de horarios de clase por grupo y maestro asignado.</p>
-                    </div>
-                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteHorarios">
-                        <i class='bx bx-file-find me-2'></i>Generar Reporte
-                    </button>
-                </div>
-            </div>
-
-            <div class="col-12 col-md-6 col-lg-4">
-                <div class="card-report">
-                    <div>
-                        <div class="card-icon-circle"><i class="fas fa-clipboard-list"></i></div>
-                        <h5>Asistencias</h5>
-                        <p>Registro de puntualidad y asistencia por periodos personalizados.</p>
-                    </div>
-                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteAsistencias">
+                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReportePersonal">
                         <i class='bx bx-file-find me-2'></i>Generar Reporte
                     </button>
                 </div>
@@ -281,7 +221,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                     <div>
                         <div class="card-icon-circle"><i class="fas fa-qrcode"></i></div>
                         <h5>Asistencia QR</h5>
-                        <p>Acceso al sistema de escaneo y registro automático de entradas y salidas.</p>
+                        <p>Acceso al sistema de registro de entradas y salidas mediante código QR.</p>
                     </div>
                     <a href="qr_asistencia.php" class="btn btn-report">
                         <i class='bx bx-link-external me-2'></i>Abrir Sistema
@@ -292,11 +232,11 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card-report">
                     <div>
-                        <div class="card-icon-circle"><i class="fas fa-book"></i></div>
-                        <h5>Plan de Materias</h5>
-                        <p>Listado de currícula por carrera, semestre y carga de créditos.</p>
+                        <div class="card-icon-circle"><i class="fas fa-check-circle"></i></div>
+                        <h5>Calificaciones</h5>
+                        <p>Sábanas de notas, promedios por periodo y seguimiento académico oficial.</p>
                     </div>
-                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteMaterias">
+                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteCalificaciones">
                         <i class='bx bx-file-find me-2'></i>Generar Reporte
                     </button>
                 </div>
@@ -307,20 +247,21 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                     <div>
                         <div class="card-icon-circle"><i class="fas fa-camera"></i></div>
                         <h5>Archivo Fotográfico</h5>
-                        <p>Reporte visual de alumnos para identificación oficial y expedientes.</p>
+                        <p>Reporte visual para identificación oficial y expedientes de la comunidad.</p>
                     </div>
                     <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteFotoAlumno">
                         <i class='bx bx-file-find me-2'></i>Generar Reporte
                     </button>
                 </div>
             </div>
+
         </div>
     </div>
 
     <footer class="text-center">
         <div class="container">
             <p class="mb-1 fw-bold text-dark">CECyTE SANTA CATARINA N.L.</p>
-            <p class="mb-0 small">© <?php echo date("Y"); ?> Sistema de Gestión Escolar. Todos los derechos reservados.</p>
+            <p class="mb-0 small">© <?php echo date("Y"); ?> Todos los derechos reservados.</p>
         </div>
     </footer>
 

@@ -1,5 +1,5 @@
 <?php
-// Conexión a la base de datos
+// ConexiÃ³n a la base de datos
 $servername = "localhost";
 $username = "root";
 $password = "";
@@ -7,8 +7,11 @@ $dbname = "cecyte_sc";
 
 $conn = new mysqli($servername, $username, $password, $dbname);
 
+// Configurar charset para evitar problemas con acentos y Ã‘
+$conn->set_charset("utf8");
+
 if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
+    die("ConexiÃ³n fallida: " . $conn->connect_error);
 }
 
 // Recuperar datos del formulario
@@ -28,12 +31,48 @@ $telefonoEmergencia = $_POST['telefonoEmergencia'];
 $mailInstitucional = $_POST['mailInstitucional'];
 $mailPersonal = $_POST['mailPersonal'];
 
-// Insertar datos en la tabla maestros
-$sql = "INSERT INTO maestros (numEmpleado, apellidoPaterno, apellidoMaterno, nombre, fechaNacimiento, id_genero, rfc, curp, id_nacionalidad, id_estadoNacimiento, direccion, numCelular, telefonoEmergencia, mailInstitucional, mailPersonal)
-VALUES ('$numEmpleado', '$apellidoPaterno', '$apellidoMaterno', '$nombre', '$fechaNacimiento', '$id_genero', '$rfc', '$curp', '$id_nacionalidad', '$id_estadoNacimiento', '$direccion', '$numCelular', '$telefonoEmergencia', '$mailInstitucional', '$mailPersonal')";
+// NUEVO: Recuperar el Rol seleccionado
+$id_rol = $_POST['id_rol']; 
+
+// Insertar datos en la tabla maestros (incluyendo id_rol)
+$sql = "INSERT INTO maestros (
+    numEmpleado, 
+    apellidoPaterno, 
+    apellidoMaterno, 
+    nombre, 
+    fechaNacimiento, 
+    id_genero, 
+    rfc, 
+    curp, 
+    id_nacionalidad, 
+    id_estadoNacimiento, 
+    direccion, 
+    numCelular, 
+    telefonoEmergencia, 
+    mailInstitucional, 
+    mailPersonal,
+    id_rol
+) VALUES (
+    '$numEmpleado', 
+    '$apellidoPaterno', 
+    '$apellidoMaterno', 
+    '$nombre', 
+    '$fechaNacimiento', 
+    '$id_genero', 
+    '$rfc', 
+    '$curp', 
+    '$id_nacionalidad', 
+    '$id_estadoNacimiento', 
+    '$direccion', 
+    '$numCelular', 
+    '$telefonoEmergencia', 
+    '$mailInstitucional', 
+    '$mailPersonal',
+    '$id_rol'
+)";
 
 if ($conn->query($sql) === TRUE) {
-    echo "Maestro registrado correctamente.";
+    echo "Colaborador registrado correctamente.";
 } else {
     echo "Error: " . $sql . "<br>" . $conn->error;
 }

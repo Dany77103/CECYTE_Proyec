@@ -18,6 +18,14 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
     header('Location: index.php');
     exit;
 }
+
+// Lógica para obtener calificaciones (para el modal)
+$sql_calif = "SELECT c.id_calificacion, c.matriculaAlumno, a.nombre, a.apellidoPaterno, c.numEmpleado, c.calificacion
+              FROM calificaciones c
+              INNER JOIN alumnos a ON c.matriculaAlumno = a.matriculaAlumno
+              ORDER BY c.id_calificacion DESC";
+$stmt_calif = $con->query($sql_calif);
+$calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -134,10 +142,18 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             display: flex;
             align-items: center;
             justify-content: center;
+            cursor: pointer;
         }
 
         .btn-report:hover {
             background: var(--primary-color);
+            color: white;
+        }
+
+        .modal-xl { max-width: 90%; }
+        
+        .table-custom thead {
+            background-color: var(--primary-color);
             color: white;
         }
 
@@ -236,8 +252,8 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                         <h5>Calificaciones</h5>
                         <p>Sábanas de notas, promedios por periodo y seguimiento académico oficial.</p>
                     </div>
-                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteCalificaciones">
-                        <i class='bx bx-file-find me-2'></i>Generar Reporte
+                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalListaCalificaciones">
+                        <i class='bx bx-spreadsheet me-2'></i>Ver Reporte
                     </button>
                 </div>
             </div>
@@ -255,6 +271,62 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                 </div>
             </div>
 
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalListaCalificaciones" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
+                <div class="modal-header text-white" style="background: var(--primary-color);">
+                    <h5 class="modal-title fw-bold"><i class='bx bx-list-check me-2'></i>Reporte General de Calificaciones</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-custom">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Matrícula</th>
+                                    <th>Alumno</th>
+                                    <th>Docente (Emp#)</th>
+                                    <th>Calificación</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if (empty($calificaciones)): ?>
+                                    <tr>
+                                        <td colspan="6" class="text-center py-4 text-muted">No hay registros de calificaciones.</td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($calificaciones as $row): ?>
+                                    <tr>
+                                        <td class="fw-bold">#<?php echo $row['id_calificacion']; ?></td>
+                                        <td><span class="badge bg-light text-dark border"><?php echo $row['matriculaAlumno']; ?></span></td>
+                                        <td><?php echo $row['nombre'] . " " . $row['apellidoPaterno']; ?></td>
+                                        <td><small class="text-muted"><?php echo $row['numEmpleado']; ?></small></td>
+                                        <td>
+                                            <span class="badge <?php echo $row['calificacion'] >= 7 ? 'bg-success' : 'bg-danger'; ?>" style="font-size: 0.9rem;">
+                                                <?php echo $row['calificacion']; ?>
+                                            </span>
+                                        </td>
+                                        <td class="text-center">
+                                            <a href="editar_calificacion.php?id=<?php echo $row['id_calificacion']; ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                <i class='bx bx-edit-alt'></i> Editar
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
         </div>
     </div>
 

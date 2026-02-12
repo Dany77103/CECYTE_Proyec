@@ -26,6 +26,13 @@ $sql_calif = "SELECT c.id_calificacion, c.matriculaAlumno, a.nombre, a.apellidoP
               ORDER BY c.id_calificacion DESC";
 $stmt_calif = $con->query($sql_calif);
 $calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
+
+// --- LÓGICA PARA APARTADO FOTOGRÁFICO ---
+$sql_fotos = "SELECT id_alumno, matriculaAlumno, nombre, apellidoPaterno, apellidoMaterno, rutaImagen 
+              FROM alumnos 
+              ORDER BY apellidoPaterno ASC";
+$stmt_fotos = $con->query($sql_fotos);
+$fotos_alumnos = $stmt_fotos->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
@@ -150,11 +157,17 @@ $calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
             color: white;
         }
 
-        .modal-xl { max-width: 90%; }
-        
         .table-custom thead {
             background-color: var(--primary-color);
             color: white;
+        }
+
+        .img-alumno-tabla {
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid var(--accent-color);
         }
 
         footer {
@@ -192,7 +205,6 @@ $calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
         </div>
 
         <div class="row g-4">
-            
             <div class="col-12 col-md-6 col-lg-4">
                 <div class="card-report">
                     <div>
@@ -226,9 +238,9 @@ $calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
                         <h5>Reportes de Personal</h5>
                         <p>Documentación de administrativos, intendencia y personal de apoyo.</p>
                     </div>
-                    <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReportePersonal">
+                    <a href="reporte_personal.php" class="btn btn-report">
                         <i class='bx bx-file-find me-2'></i>Generar Reporte
-                    </button>
+                    </a>
                 </div>
             </div>
 
@@ -266,7 +278,7 @@ $calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
                         <p>Reporte visual para identificación oficial y expedientes de la comunidad.</p>
                     </div>
                     <button class="btn btn-report" data-bs-toggle="modal" data-bs-target="#modalReporteFotoAlumno">
-                        <i class='bx bx-file-find me-2'></i>Generar Reporte
+                        <i class='bx bx-image me-2'></i>Generar Reporte
                     </button>
                 </div>
             </div>
@@ -289,42 +301,75 @@ $calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
                                     <th>ID</th>
                                     <th>Matrícula</th>
                                     <th>Alumno</th>
-                                    <th>Docente (Emp#)</th>
+                                    <th>Docente</th>
                                     <th>Calificación</th>
                                     <th class="text-center">Acciones</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php if (empty($calificaciones)): ?>
-                                    <tr>
-                                        <td colspan="6" class="text-center py-4 text-muted">No hay registros de calificaciones.</td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($calificaciones as $row): ?>
-                                    <tr>
-                                        <td class="fw-bold">#<?php echo $row['id_calificacion']; ?></td>
-                                        <td><span class="badge bg-light text-dark border"><?php echo $row['matriculaAlumno']; ?></span></td>
-                                        <td><?php echo $row['nombre'] . " " . $row['apellidoPaterno']; ?></td>
-                                        <td><small class="text-muted"><?php echo $row['numEmpleado']; ?></small></td>
-                                        <td>
-                                            <span class="badge <?php echo $row['calificacion'] >= 7 ? 'bg-success' : 'bg-danger'; ?>" style="font-size: 0.9rem;">
-                                                <?php echo $row['calificacion']; ?>
-                                            </span>
-                                        </td>
-                                        <td class="text-center">
-                                            <a href="editar_calificacion.php?id=<?php echo $row['id_calificacion']; ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                                <i class='bx bx-edit-alt'></i> Editar
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
+                                <?php foreach ($calificaciones as $row): ?>
+                                <tr>
+                                    <td class="fw-bold">#<?php echo $row['id_calificacion']; ?></td>
+                                    <td><span class="badge bg-light text-dark border"><?php echo $row['matriculaAlumno']; ?></span></td>
+                                    <td><?php echo $row['nombre'] . " " . $row['apellidoPaterno']; ?></td>
+                                    <td><small class="text-muted"><?php echo $row['numEmpleado']; ?></small></td>
+                                    <td>
+                                        <span class="badge <?php echo $row['calificacion'] >= 7 ? 'bg-success' : 'bg-danger'; ?>">
+                                            <?php echo $row['calificacion']; ?>
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="editar_calificacion.php?id=<?php echo $row['id_calificacion']; ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3">Editar</a>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
                             </tbody>
                         </table>
                     </div>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalReporteFotoAlumno" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
+                <div class="modal-header text-white" style="background: var(--primary-color);">
+                    <h5 class="modal-title fw-bold"><i class='bx bx-camera me-2'></i>Archivo Fotográfico de Alumnos</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle table-custom">
+                            <thead>
+                                <tr>
+                                    <th>Fotografía</th>
+                                    <th>Matrícula</th>
+                                    <th>Nombre Completo</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($fotos_alumnos as $alumno): ?>
+                                <tr>
+                                    <td>
+                                        <?php $path_foto = !empty($alumno['rutaImagen']) ? $alumno['rutaImagen'] : "https://ui-avatars.com/api/?name=".urlencode($alumno['nombre'])."&background=random"; ?>
+                                        <img src="<?php echo $path_foto; ?>" class="img-alumno-tabla" alt="Alumno">
+                                    </td>
+                                    <td><code><?php echo $alumno['matriculaAlumno']; ?></code></td>
+                                    <td class="fw-semibold"><?php echo $alumno['apellidoPaterno'] . " " . $alumno['apellidoMaterno'] . " " . $alumno['nombre']; ?></td>
+                                    <td class="text-center">
+                                        <?php if(!empty($alumno['rutaImagen'])): ?>
+                                            <span class="badge bg-success-subtle text-success px-3">Registrada</span>
+                                        <?php else: ?>
+                                            <span class="badge bg-warning-subtle text-warning px-3">Pendiente</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
@@ -339,7 +384,6 @@ $calificaciones = $stmt_calif->fetchAll(PDO::FETCH_ASSOC);
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    
     <?php include 'modales_reportes.php'; ?>
 </body>
 </html>

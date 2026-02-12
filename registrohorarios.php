@@ -3,6 +3,13 @@
 require 'conexion.php'; 
 session_start();
 
+// --- NUEVO: GESTIÓN DE GRADO Y GRUPO ---
+$grado_sel = isset($_POST['grado']) ? $_POST['grado'] : '1';
+$grupo_sel = isset($_POST['grupo']) ? $_POST['grupo'] : 'A';
+// El ID del grupo ahora se busca o se define según la selección
+// Para este ejemplo, usaremos una lógica de concatenación o búsqueda
+$id_grupo_actual = $grado_sel . $grupo_sel; 
+
 // 2. OBTENER MATERIAS REALES DE LA BASE DE DATOS
 $materias = [];
 try {
@@ -29,15 +36,14 @@ $bloques_config = [
 ];
 
 $dias_nombres = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes"];
-$id_grupo_actual = 1; // ID fijo para tus pruebas
 
-// --- NUEVO: CARGAR HORARIO GUARDADO ---
+// --- CARGAR HORARIO GUARDADO SEGÚN GRUPO SELECCIONADO ---
 $horario_guardado = [];
 try {
+    // Nota: Asegúrate de que tu tabla horarios acepte el formato de id_grupo que estás usando
     $stmt_view = $con->prepare("SELECT id_materia, dia, hora_inicio FROM horarios WHERE id_grupo = ?");
     $stmt_view->execute([$id_grupo_actual]);
     while($h = $stmt_view->fetch(PDO::FETCH_ASSOC)) {
-        // Guardamos en un array multidimensional [HORA][DIA]
         $horario_guardado[$h['hora_inicio']][$h['dia']] = $h['id_materia'];
     }
 } catch (PDOException $e) { /* Manejar error */ }
@@ -47,7 +53,10 @@ try {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btn_guardar'])) {
     try {
         $con->beginTransaction();
-        $con->exec("DELETE FROM horarios WHERE id_grupo = $id_grupo_actual");
+        // Limpiamos solo el horario del grupo específico seleccionado
+        $stmt_del = $con->prepare("DELETE FROM horarios WHERE id_grupo = ?");
+        $stmt_del->execute([$id_grupo_actual]);
+
         $stmt_ins = $con->prepare("INSERT INTO horarios (id_materia, id_grupo, dia, hora_inicio, hora_fin) VALUES (?, ?, ?, ?, ?)");
 
         if(isset($_POST['materia_id'])) {
@@ -64,7 +73,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btn_guardar'])) {
             }
         }
         $con->commit();
-        echo "<script>alert('¡Horario guardado correctamente!'); window.location.href='registrohorarios.php';</script>";
+        echo "<script>alert('¡Horario del grupo $id_grupo_actual guardado correctamente!'); window.location.href='registrohorarios.php';</script>";
     } catch (PDOException $e) {
         $con->rollBack();
         echo "Error al guardar: " . $e->getMessage();
@@ -88,6 +97,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btn_guardar'])) {
         .view-time { font-weight: 700; color: var(--primary-color); font-size: 0.75rem; background: #f8fafc !important; }
         .btn-capture { background: var(--primary-color); color: white; border: none; padding: 12px 35px; border-radius: 12px; font-weight: 700; transition: 0.3s; width: 100%; }
         .btn-capture:hover { background: var(--accent-color); transform: translateY(-2px); }
+        
+        /* Estilo para los nuevos selectores */
+        .group-select {
+            background: #f0fdf4;
+            border: 2px solid var(--accent-color);
+            border-radius: 12px;
+            padding: 10px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -98,8 +117,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btn_guardar'])) {
         <a href="main.php" class="btn btn-outline-dark rounded-pill shadow-sm"><i class='bx bx-arrow-back'></i> Menú Principal</a>
     </div>
 
-    <div class="glass-card">
-        <form method="POST">
+    <form method="POST">
+        <div class="glass-card mb-4 border-start border-4 border-success">
+            <div class="row align-items-center">
+                <div class="col-md-auto">
+                    <label class="small fw-bold text-muted d-block mb-1">SELECCIONAR GRADO</label>
+                    <select name="grado" class="form-select group-select" onchange="this.form.submit()">
+                        <?php for($i=1; $i<=6; $i++): ?>
+                            <option value="<?php echo $i; ?>" <?php echo $grado_sel == $i ? 'selected' : ''; ?>>
+                                <?php echo $i; ?>° Semestre
+                            </option>
+                        <?php endfor; ?>
+                    </select>
+                </div>
+                <div class="col-md-auto">
+                    <label class="small fw-bold text-muted d-block mb-1">SELECCIONAR GRUPO</label>
+                    <select name="grupo" class="form-select group-select" onchange="this.form.submit()">
+                        <?php foreach(['A', 'B', 'C', 'D', 'E'] as $g): ?>
+                            <option value="<?php echo $g; ?>" <?php echo $grupo_sel == $g ? 'selected' : ''; ?>>
+                                Grupo <?php echo $g; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="col-md text-end pt-3">
+                    <span class="badge bg-success p-2 px-3 rounded-pill">
+                        Editando Horario: <b class="fs-6"><?php echo $id_grupo_actual; ?></b>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="glass-card">
             <div class="table-responsive">
                 <table class="table table-borderless align-middle">
                     <thead class="text-center text-muted small">
@@ -148,15 +197,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btn_guardar'])) {
             <div class="row mt-3">
                 <div class="col-md-4 offset-md-8">
                     <button type="submit" name="btn_guardar" class="btn-capture">
-                        <i class='bx bx-save'></i> GUARDAR HORARIO
+                        <i class='bx bx-save'></i> GUARDAR HORARIO <?php echo $id_grupo_actual; ?>
                     </button>
                 </div>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 
     <div class="glass-card">
-        <h6 class="fw-bold text-muted mb-4 text-center">VISTA PREVIA DEL HORARIO</h6>
+        <h6 class="fw-bold text-muted mb-4 text-center">VISTA PREVIA DEL HORARIO (GRUPO <?php echo $id_grupo_actual; ?>)</h6>
         <div class="table-responsive">
             <table class="table-view w-100" style="border-collapse: separate; border-spacing: 10px;">
                 <tbody>
@@ -206,7 +255,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btn_guardar'])) {
         }
     }
 
-    // Al cargar la página, ejecutar la vista previa para los elementos ya guardados
     document.addEventListener("DOMContentLoaded", function() {
         const selectors = document.querySelectorAll('.slot-selector');
         selectors.forEach(select => {

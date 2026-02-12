@@ -1,81 +1,54 @@
 <?php
-// Conexión a la base de datos
-$servername = "localhost";
-$username = "root";
-$password = "";
-$dbname = "cecyte_sc";
+require 'conexion.php';
 
-$conn = new mysqli($servername, $username, $password, $dbname);
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Recibir datos del formulario y mapearlos a los nombres de la tabla
+    $num_empleado        = $_POST['numEmpleado'] ?? '';
+    $nombre              = $_POST['nombre'] ?? '';
+    $apellido_paterno    = $_POST['apellidoPaterno'] ?? '';
+    $apellido_materno    = $_POST['apellidoMaterno'] ?? '';
+    $rfc                 = $_POST['rfc'] ?? '';
+    $curp                = $_POST['curp'] ?? '';
+    $fecha_nacimiento    = $_POST['fechaNacimiento'] ?? '';
+    $id_genero           = $_POST['id_genero'] ?? null;
+    $id_nacionalidad     = $_POST['id_nacionalidad'] ?? 1;
+    $id_estado_nacimiento = $_POST['id_estadoNacimiento'] ?? null;
+    $direccion           = $_POST['direccion'] ?? '';
+    $num_celular         = $_POST['numCelular'] ?? '';
+    $telefono_emergencia = $_POST['telefonoEmergencia'] ?? '';
+    $mail_institucional  = $_POST['mailInstitucional'] ?? '';
+    $mail_personal       = $_POST['mailPersonal'] ?? '';
+    $id_rol              = $_POST['id_rol'] ?? null;
+    $estatus             = $_POST['estatus'] ?? 'Activo';
 
-// Configurar charset para evitar problemas con acentos y Ñ
-$conn->set_charset("utf8");
+    try {
+        // Usando PDO (más seguro y moderno)
+        $sql = "INSERT INTO personal_institucional (
+                    num_empleado, nombre, apellido_paterno, apellido_materno, 
+                    rfc, curp, fecha_nacimiento, id_genero, id_nacionalidad, 
+                    id_estado_nacimiento, direccion, num_celular, 
+                    telefono_emergencia, mail_institucional, mail_personal, id_rol, estatus
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-if ($conn->connect_error) {
-    die("Conexión fallida: " . $conn->connect_error);
+        $stmt = $con->prepare($sql);
+        $resultado = $stmt->execute([
+            $num_empleado, $nombre, $apellido_paterno, $apellido_materno,
+            $rfc, $curp, $fecha_nacimiento, $id_genero, $id_nacionalidad,
+            $id_estado_nacimiento, $direccion, $num_celular,
+            $telefono_emergencia, $mail_institucional, $mail_personal, $id_rol, $estatus
+        ]);
+
+        if ($resultado) {
+            echo "success";
+        }
+    } catch (PDOException $e) {
+        http_response_code(500);
+        // Mostrar error específico si el RFC o CURP ya existen (duplicados)
+        if ($e->getCode() == 23000) {
+            echo "Error: El RFC, CURP o Número de Empleado ya se encuentra registrado.";
+        } else {
+            echo "Error en la base de datos: " . $e->getMessage();
+        }
+    }
 }
-
-// Recuperar datos del formulario
-$numEmpleado = $_POST['numEmpleado'];
-$apellidoPaterno = $_POST['apellidoPaterno'];
-$apellidoMaterno = $_POST['apellidoMaterno'];
-$nombre = $_POST['nombre'];
-$fechaNacimiento = $_POST['fechaNacimiento'];
-$id_genero = $_POST['id_genero'];
-$rfc = $_POST['rfc'];
-$curp = $_POST['curp'];
-$id_nacionalidad = $_POST['id_nacionalidad'];
-$id_estadoNacimiento = $_POST['id_estadoNacimiento'];
-$direccion = $_POST['direccion'];
-$numCelular = $_POST['numCelular'];
-$telefonoEmergencia = $_POST['telefonoEmergencia'];
-$mailInstitucional = $_POST['mailInstitucional'];
-$mailPersonal = $_POST['mailPersonal'];
-
-// NUEVO: Recuperar el Rol seleccionado
-$id_rol = $_POST['id_rol']; 
-
-// Insertar datos en la tabla maestros (incluyendo id_rol)
-$sql = "INSERT INTO maestros (
-    numEmpleado, 
-    apellidoPaterno, 
-    apellidoMaterno, 
-    nombre, 
-    fechaNacimiento, 
-    id_genero, 
-    rfc, 
-    curp, 
-    id_nacionalidad, 
-    id_estadoNacimiento, 
-    direccion, 
-    numCelular, 
-    telefonoEmergencia, 
-    mailInstitucional, 
-    mailPersonal,
-    id_rol
-) VALUES (
-    '$numEmpleado', 
-    '$apellidoPaterno', 
-    '$apellidoMaterno', 
-    '$nombre', 
-    '$fechaNacimiento', 
-    '$id_genero', 
-    '$rfc', 
-    '$curp', 
-    '$id_nacionalidad', 
-    '$id_estadoNacimiento', 
-    '$direccion', 
-    '$numCelular', 
-    '$telefonoEmergencia', 
-    '$mailInstitucional', 
-    '$mailPersonal',
-    '$id_rol'
-)";
-
-if ($conn->query($sql) === TRUE) {
-    echo "Colaborador registrado correctamente.";
-} else {
-    echo "Error: " . $sql . "<br>" . $conn->error;
-}
-
-$conn->close();
 ?>

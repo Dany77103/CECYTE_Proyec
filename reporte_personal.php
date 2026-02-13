@@ -16,7 +16,6 @@ try {
     $con->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     // 2. CONSULTA DE PERSONAL
-    // Obtenemos los datos clave para el reporte
     $sql = "SELECT id_personal, num_empleado, nombre, apellido_paterno, apellido_materno, rfc, id_rol, estatus, mail_institucional 
             FROM personal_institucional 
             ORDER BY id_rol ASC, apellido_paterno ASC";
@@ -27,7 +26,6 @@ try {
     die("Error: " . $e->getMessage());
 }
 
-// Mapeo de Roles para mostrar nombres en lugar de IDs
 $roles_nombres = [
     2 => "Administrativo(a)",
     3 => "Conserje / Intendencia",
@@ -51,13 +49,20 @@ $roles_nombres = [
             --primary-color: #064e3b;
             --accent-color: #10b981;
             --bg-light: #f0fdf4;
+            --danger-color: #dc3545;
         }
         body { background-color: var(--bg-light); font-family: 'Inter', sans-serif; }
         .main-card { border-radius: 20px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.08); }
         .table thead { background-color: var(--primary-color); color: white; }
         .status-badge { font-size: 0.8rem; padding: 5px 12px; border-radius: 50px; }
+        
+        /* Estilos de botones */
         .btn-edit { color: var(--primary-color); border: 1px solid var(--primary-color); transition: 0.3s; }
         .btn-edit:hover { background: var(--primary-color); color: white; }
+        
+        .btn-delete { color: var(--danger-color); border: 1px solid var(--danger-color); transition: 0.3s; }
+        .btn-delete:hover { background: var(--danger-color); color: white; }
+        
         .role-text { font-weight: 600; color: #475569; font-size: 0.9rem; }
     </style>
 </head>
@@ -115,10 +120,18 @@ $roles_nombres = [
                                     </span>
                                 </td>
                                 <td class="text-center pe-4">
-                                    <a href="editar_personal.php?id=<?php echo $p['id_personal']; ?>" 
-                                       class="btn btn-sm btn-edit rounded-pill px-3">
-                                        <i class='bx bx-edit-alt'></i> Editar Expediente
-                                    </a>
+                                    <div class="d-flex justify-content-center gap-2">
+                                        <a href="editar_personal.php?id=<?php echo $p['id_personal']; ?>" 
+                                           class="btn btn-sm btn-edit rounded-pill px-3">
+                                            <i class='bx bx-edit-alt'></i> Editar
+                                        </a>
+                                        
+                                        <a href="eliminar_personal.php?id=<?php echo $p['id_personal']; ?>" 
+                                           class="btn btn-sm btn-delete rounded-pill px-3"
+                                           onclick="return confirmarEliminacion('<?php echo $p['nombre'] . ' ' . $p['apellido_paterno']; ?>')">
+                                            <i class='bx bx-trash'></i> Eliminar
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             <?php endforeach; ?>
@@ -135,11 +148,14 @@ $roles_nombres = [
             </div>
         </div>
     </div>
-
-    <div class="mt-4 text-center">
-        <p class="small text-muted">Para agregar nuevo personal, diríjase al módulo de <strong>Alta de Personal</strong>.</p>
-    </div>
 </div>
+
+<script>
+// Función para confirmar antes de borrar
+function confirmarEliminacion(nombre) {
+    return confirm("¿Estás seguro de que deseas eliminar a " + nombre + "? Esta acción no se puede deshacer.");
+}
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>

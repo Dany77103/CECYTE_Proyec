@@ -83,12 +83,6 @@ session_start();
             transition: 0.3s;
         }
 
-        .form-control:focus {
-            border-color: var(--accent-color);
-            background: white;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-        }
-
         .section-title {
             font-size: 0.85rem;
             font-weight: 800;
@@ -122,11 +116,26 @@ session_start();
             gap: 10px;
         }
 
-        .btn-submit:hover {
-            background: #043a2c;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(6,78,59,0.2);
+        /* Estilos específicos para la sección de maestros */
+        #seccionMaestro {
+            display: none; 
+            background: #f0fdf4;
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px dashed var(--accent-color);
         }
+
+        .btn-add-row {
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 5px 15px;
+            font-size: 0.8rem;
+            transition: 0.3s;
+        }
+
+        .btn-add-row:hover { background-color: #059669; }
     </style>
 </head>
 <body>
@@ -146,113 +155,20 @@ session_start();
 <div class="container mb-5">
     <div class="row justify-content-center">
         <div class="col-lg-11">
-            
             <div class="form-card animate__animated animate__fadeIn">
                 <div class="form-header">
                     <i class='bx bx-user-plus fs-1 mb-2'></i>
                     <h3 class="fw-bold mb-0">Registro de Colaborador</h3>
-                    <p class="opacity-75 mb-0 small">Sincronizado con tabla: <b>personal_institucional</b></p>
                 </div>
                 
                 <div class="form-body">
                     <form id="formRegistroPersonal">
                         
-                        <div class="section-title">INFORMACIÓN DE IDENTIDAD</div>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-3">
-                                <label class="form-label">Número de Empleado</label>
-                                <input type="text" name="numEmpleado" class="form-control" placeholder="Ej: M210" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Nombre(s)</label>
-                                <input type="text" name="nombre" class="form-control" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Ap. Paterno</label>
-                                <input type="text" name="apellidoPaterno" class="form-control" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Ap. Materno</label>
-                                <input type="text" name="apellidoMaterno" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-3">
-                                <label class="form-label">RFC</label>
-                                <input type="text" name="rfc" class="form-control" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">CURP</label>
-                                <input type="text" name="curp" class="form-control" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Fecha Nacimiento</label>
-                                <input type="date" name="fechaNacimiento" class="form-control" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Género</label>
-                                <select name="id_genero" class="form-select">
-                                    <option value="1">Masculino</option>
-                                    <option value="2">Femenino</option>
-                                    <option value="3">Otro</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="section-title">NACIONALIDAD Y ORIGEN</div>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-6">
-                                <label class="form-label">Nacionalidad</label>
-                                <select name="id_nacionalidad" class="form-select" required>
-                                    <option value="1">Mexicana</option>
-                                    <option value="3">Extranjera</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label">Estado de Nacimiento</label>
-                                <select name="id_estadoNacimiento" class="form-select">
-                                    <option value="4">San Luis Potosí</option>
-                                    <option value="19">Nuevo León</option>
-                                    <option value="1">Aguascalientes</option>
-                                    <option value="5">Coahuila</option>
-                                    <option value="33">Otro</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="section-title">CONTACTO Y DOMICILIO</div>
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-8">
-                                <label class="form-label">Dirección Particular</label>
-                                <input type="text" name="direccion" class="form-control" placeholder="Calle, Número y Colonia">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Tel. Emergencia</label>
-                                <input type="text" name="telefonoEmergencia" class="form-control">
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mb-4">
-                            <div class="col-md-4">
-                                <label class="form-label">Correo Institucional</label>
-                                <input type="email" name="mailInstitucional" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Correo Personal</label>
-                                <input type="email" name="mailPersonal" class="form-control">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Celular</label>
-                                <input type="text" name="numCelular" class="form-control">
-                            </div>
-                        </div>
-
                         <div class="section-title">DATOS LABORALES</div>
-                        <div class="row g-3 mb-5">
+                        <div class="row g-3 mb-4">
                             <div class="col-md-6">
                                 <label class="form-label">Rol / Función en el Plantel</label>
-                                <select name="id_rol" class="form-select" required>
+                                <select name="id_rol" id="id_rol" class="form-select" required>
                                     <option value="" selected disabled>Seleccione un rol...</option>
                                     <option value="1">Maestro(a)</option>
                                     <option value="2">Administrativo(a)</option>
@@ -272,10 +188,54 @@ session_start();
                             </div>
                         </div>
 
+                        <div id="seccionMaestro" class="animate__animated animate__fadeIn mb-5">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="section-title text-success mb-0" style="flex-grow: 1;">CARGA ACADÉMICA</div>
+                                <button type="button" class="btn-add-row" id="btnAgregarFila">
+                                    <i class='bx bx-plus-circle'></i> Agregar Materia
+                                </button>
+                            </div>
+                            
+                            <div class="table-responsive">
+                                <table class="table table-bordered align-middle bg-white" id="tablaMaterias">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Asignatura / Materia</th>
+                                            <th>Grupo</th>
+                                            <th>Turno</th>
+                                            <th width="50px"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td><input type="text" name="materia[]" class="form-control form-control-sm" placeholder="Ej: Matemáticas I"></td>
+                                            <td>
+                                                <select name="grupo[]" class="form-select form-select-sm">
+                                                    <option value="">Grupo...</option>
+                                                    <option value="1A">1A</option><option value="1B">1B</option>
+                                                    <option value="2A">2A</option><option value="2B">2B</option>
+                                                    <option value="3A">3A</option><option value="4A">4A</option>
+                                                </select>
+                                            </td>
+                                            <td>
+                                                <select name="turno[]" class="form-select form-select-sm">
+                                                    <option value="Matutino">Matutino</option>
+                                                    <option value="Vespertino">Vespertino</option>
+                                                </select>
+                                            </td>
+                                            <td class="text-center">
+                                                <button type="button" class="btn btn-outline-danger btn-sm border-0 btn-eliminar-fila"><i class='bx bx-trash'></i></button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                         <div class="row">
                             <div class="col-md-6 offset-md-3">
                                 <button type="submit" class="btn-submit">
-                                    <i class='bx bx-save'></i> Guardar Colaborador
+                                    <i class='bx bx-save'></i> Guardar Registro Completo
                                 </button>
                             </div>
                         </div>
@@ -287,26 +247,67 @@ session_start();
 </div>
 
 <script>
+const selectRol = document.getElementById('id_rol');
+const seccionMaestro = document.getElementById('seccionMaestro');
+const btnAgregar = document.getElementById('btnAgregarFila');
+const tablaMaterias = document.getElementById('tablaMaterias').getElementsByTagName('tbody')[0];
+
+// Mostrar/Ocultar sección
+selectRol.addEventListener('change', function() {
+    seccionMaestro.style.display = (this.value === "1") ? 'block' : 'none';
+});
+
+// Función para agregar nueva fila
+btnAgregar.addEventListener('click', function() {
+    const nuevaFila = tablaMaterias.insertRow();
+    nuevaFila.innerHTML = `
+        <td><input type="text" name="materia[]" class="form-control form-control-sm" placeholder="Ej: Matemáticas I"></td>
+        <td>
+            <select name="grupo[]" class="form-select form-select-sm">
+                <option value="">Grupo...</option>
+                <option value="1A">1A</option><option value="1B">1B</option>
+                <option value="2A">2A</option><option value="2B">2B</option>
+                <option value="3A">3A</option><option value="4A">4A</option>
+            </select>
+        </td>
+        <td>
+            <select name="turno[]" class="form-select form-select-sm">
+                <option value="Matutino">Matutino</option>
+                <option value="Vespertino">Vespertino</option>
+            </select>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-outline-danger btn-sm border-0 btn-eliminar-fila"><i class='bx bx-trash'></i></button>
+        </td>
+    `;
+});
+
+// Eliminar fila (usando delegación de eventos)
+tablaMaterias.addEventListener('click', function(e) {
+    if (e.target.closest('.btn-eliminar-fila')) {
+        const filas = tablaMaterias.getElementsByTagName('tr');
+        if (filas.length > 1) {
+            e.target.closest('tr').remove();
+        } else {
+            Swal.fire('Atención', 'Al menos debe haber una materia asignada para el maestro.', 'info');
+        }
+    }
+});
+
+// Enviar formulario
 document.getElementById('formRegistroPersonal').addEventListener('submit', function(e) {
     e.preventDefault();
-
     const formData = new FormData(this);
 
-    fetch('guardar_maestro.php', { // Asegúrate de actualizar este archivo para recibir 'id_rol'
+    fetch('guardar_maestro.php', { 
         method: 'POST',
         body: formData
     })
-    .then(response => {
-        Swal.fire({
-            title: '¡Colaborador Registrado!',
-            text: 'La información se ha guardado correctamente en la base de datos.',
-            icon: 'success',
-            confirmButtonColor: '#064e3b'
-        });
-        this.reset(); 
-    })
-    .catch(error => {
-        Swal.fire('Error', 'Hubo un problema al conectar con el servidor', 'error');
+    .then(res => res.text())
+    .then(data => {
+        Swal.fire('¡Éxito!', 'Colaborador y carga académica guardados.', 'success');
+        this.reset();
+        seccionMaestro.style.display = 'none';
     });
 });
 </script>

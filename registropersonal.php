@@ -88,6 +88,7 @@ session_start();
             font-weight: 800;
             color: var(--accent-color);
             margin-bottom: 20px;
+            margin-top: 30px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -116,7 +117,6 @@ session_start();
             gap: 10px;
         }
 
-        /* Estilos específicos para la sección de maestros */
         #seccionMaestro {
             display: none; 
             background: #f0fdf4;
@@ -134,8 +134,6 @@ session_start();
             font-size: 0.8rem;
             transition: 0.3s;
         }
-
-        .btn-add-row:hover { background-color: #059669; }
     </style>
 </head>
 <body>
@@ -164,6 +162,68 @@ session_start();
                 <div class="form-body">
                     <form id="formRegistroPersonal">
                         
+                        <div class="section-title">DATOS DE IDENTIDAD</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <label class="form-label">Num. Empleado</label>
+                                <input type="text" name="numEmpleado" class="form-control" placeholder="0000" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Nombre(s)</label>
+                                <input type="text" name="nombre" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Apellido Paterno</label>
+                                <input type="text" name="apellidoPaterno" class="form-control" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Apellido Materno</label>
+                                <input type="text" name="apellidoMaterno" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <label class="form-label">RFC</label>
+                                <input type="text" name="rfc" class="form-control" required style="text-transform: uppercase;">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">CURP</label>
+                                <input type="text" name="curp" class="form-control" required style="text-transform: uppercase;">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Fecha de Nacimiento</label>
+                                <input type="date" name="fechaNacimiento" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="section-title">CONTACTO Y DIRECCIÓN</div>
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Dirección Particular</label>
+                                <input type="text" name="direccion" class="form-control" placeholder="Calle, Número, Colonia">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Teléfono Celular</label>
+                                <input type="tel" name="numCelular" class="form-control">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Tel. Emergencia</label>
+                                <input type="tel" name="telefonoEmergencia" class="form-control">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Email Institucional</label>
+                                <input type="email" name="mailInstitucional" class="form-control" placeholder="ejemplo@cecyte.edu.mx">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Email Personal</label>
+                                <input type="email" name="mailPersonal" class="form-control">
+                            </div>
+                        </div>
+
                         <div class="section-title">DATOS LABORALES</div>
                         <div class="row g-3 mb-4">
                             <div class="col-md-6">
@@ -252,12 +312,10 @@ const seccionMaestro = document.getElementById('seccionMaestro');
 const btnAgregar = document.getElementById('btnAgregarFila');
 const tablaMaterias = document.getElementById('tablaMaterias').getElementsByTagName('tbody')[0];
 
-// Mostrar/Ocultar sección
 selectRol.addEventListener('change', function() {
     seccionMaestro.style.display = (this.value === "1") ? 'block' : 'none';
 });
 
-// Función para agregar nueva fila
 btnAgregar.addEventListener('click', function() {
     const nuevaFila = tablaMaterias.insertRow();
     nuevaFila.innerHTML = `
@@ -282,19 +340,15 @@ btnAgregar.addEventListener('click', function() {
     `;
 });
 
-// Eliminar fila (usando delegación de eventos)
 tablaMaterias.addEventListener('click', function(e) {
     if (e.target.closest('.btn-eliminar-fila')) {
         const filas = tablaMaterias.getElementsByTagName('tr');
         if (filas.length > 1) {
             e.target.closest('tr').remove();
-        } else {
-            Swal.fire('Atención', 'Al menos debe haber una materia asignada para el maestro.', 'info');
         }
     }
 });
 
-// Enviar formulario
 document.getElementById('formRegistroPersonal').addEventListener('submit', function(e) {
     e.preventDefault();
     const formData = new FormData(this);
@@ -305,9 +359,13 @@ document.getElementById('formRegistroPersonal').addEventListener('submit', funct
     })
     .then(res => res.text())
     .then(data => {
-        Swal.fire('¡Éxito!', 'Colaborador y carga académica guardados.', 'success');
-        this.reset();
-        seccionMaestro.style.display = 'none';
+        if(data.trim() === "success"){
+            Swal.fire('¡Éxito!', 'Colaborador guardado correctamente.', 'success');
+            this.reset();
+            seccionMaestro.style.display = 'none';
+        } else {
+            Swal.fire('Error', data, 'error');
+        }
     });
 });
 </script>

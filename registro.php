@@ -116,6 +116,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             position: relative;
             overflow: hidden;
             border-bottom: 4px solid transparent;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .registration-card::before {
@@ -194,9 +197,9 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                 <?php
                 $stats = [
                     ['Alumnos', 'alumnos', 'bx-user-voice'],
-                    ['Docentes', 'maestros', 'bx-briefcase-alt-2'],
+                    ['Docentes', 'personal_institucional', 'bx-briefcase-alt-2'], // Ajustado a tu tabla real
                     ['Notas', 'calificaciones', 'bx-spreadsheet'],
-                    ['Grupos', 'alumnos', 'bx-group'] 
+                    ['Grupos', 'grupos', 'bx-group'] // Apuntando a tabla grupos
                 ];
                 
                 foreach($stats as $s):
@@ -219,31 +222,48 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 
             <div class="registration-grid">
                 <div class="registration-card">
-                    <div class="card-icon-wrapper"><i class="fas fa-user-graduate"></i></div>
-                    <h5 class="fw-bold">Alumnos</h5>
-                    <p class="text-muted small mb-4">Gestión completa de inscripción y expedientes de alumnos.</p>
+                    <div>
+                        <div class="card-icon-wrapper"><i class="fas fa-user-graduate"></i></div>
+                        <h5 class="fw-bold">Alumnos</h5>
+                        <p class="text-muted small mb-4">Gestión completa de inscripción y expedientes de alumnos.</p>
+                    </div>
                     <a href="registroalumnos.php" class="btn btn-action w-100">Abrir Módulo</a>
                 </div>
 
                 <div class="registration-card">
-                    <div class="card-icon-wrapper"><i class="fas fa-chalkboard-teacher"></i></div>
-                    <h5 class="fw-bold">Personal</h5>
-                    <p class="text-muted small mb-4">Administración de plantilla docente y administrativa del plantel.</p>
+                    <div>
+                        <div class="card-icon-wrapper"><i class="fas fa-chalkboard-teacher"></i></div>
+                        <h5 class="fw-bold">Personal</h5>
+                        <p class="text-muted small mb-4">Administración de plantilla docente y administrativa del plantel.</p>
+                    </div>
                     <a href="registropersonal.php" class="btn btn-action w-100">Gestionar Personal</a>
                 </div>
 
                 <div class="registration-card">
-                    <div class="card-icon-wrapper"><i class="fas fa-file-invoice"></i></div>
-                    <h5 class="fw-bold">Calificaciones</h5>
-                    <p class="text-muted small mb-4">Registro y consulta de evaluaciones por periodo semestral.</p>
-                   <a href="registrocalificaciones.php" class="btn btn-action w-100">Gestionar Personal</a>
+                    <div>
+                        <div class="card-icon-wrapper"><i class="fas fa-users"></i></div>
+                        <h5 class="fw-bold">Asignación de Grupos</h5>
+                        <p class="text-muted small mb-4">Añadir alumnos ya registrados a los grupos existentes.</p>
+                    </div>
+                    <a href="asignar_grupos.php" class="btn btn-action w-100">Asignar Alumnos</a>
                 </div>
 
                 <div class="registration-card">
-                    <div class="card-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
-                    <h5 class="fw-bold">Horarios</h5>
-                    <p class="text-muted small mb-4">Asignación de carga horaria y disponibilidad de aulas.</p>
-                    <a href="registrohorarios.php" class="btn btn-action w-100">Gestionar Personal</a>
+                    <div>
+                        <div class="card-icon-wrapper"><i class="fas fa-file-invoice"></i></div>
+                        <h5 class="fw-bold">Calificaciones</h5>
+                        <p class="text-muted small mb-4">Registro y consulta de evaluaciones por periodo semestral.</p>
+                    </div>
+                    <a href="registrocalificaciones.php" class="btn btn-action w-100">Gestionar Notas</a>
+                </div>
+
+                <div class="registration-card">
+                    <div>
+                        <div class="card-icon-circle-wrapper card-icon-wrapper"><i class="fas fa-calendar-alt"></i></div>
+                        <h5 class="fw-bold">Horarios</h5>
+                        <p class="text-muted small mb-4">Asignación de carga horaria y disponibilidad de aulas.</p>
+                    </div>
+                    <a href="registrohorarios.php" class="btn btn-action w-100">Gestionar Horarios</a>
                 </div>
             </div>
         </main>

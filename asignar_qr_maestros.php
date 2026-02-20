@@ -10,7 +10,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Generar QR | CECyTE SC</title>
+    <title>Generar QR Maestros | CECyTE SC</title>
     <link rel="shortcut icon" href="img/favicon.ico" type="img/x-icon">
     
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -129,8 +129,8 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 <nav class="navbar navbar-custom">
     <div class="container">
         <a class="navbar-brand d-flex align-items-center" href="#">
-            <i class='bx bx-user-plus fs-3 me-2 text-success'></i>
-            <span>CECyTE SC <span class="fw-light text-muted">| Registro Nuevo</span></span>
+            <i class='bx bx-briefcase fs-3 me-2 text-success'></i>
+            <span>CECyTE SC <span class="fw-light text-muted">| QR Docentes</span></span>
         </a>
         <a href="main.php" class="btn-back">
             <i class='bx bx-arrow-back me-1'></i> Volver
@@ -143,55 +143,51 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         <div class="col-lg-6">
             <div class="card-qr">
                 <div class="text-center mb-4">
-                    <h4 class="fw-bold m-0">Credencial Digital</h4>
-                    <p class="text-muted small">Genera el código único de acceso para el estudiante</p>
+                    <h4 class="fw-bold m-0">Credencial Maestro</h4>
+                    <p class="text-muted small">Genera el código único de acceso para el personal docente</p>
                 </div>
 
                 <div class="row">
                     <div class="col-12 mb-3">
-                        <label class="form-label">Nombre del Alumno</label>
-                        <input type="text" id="nom" class="form-control" placeholder="Nombre completo">
+                        <label class="form-label">Nombre del Maestro</label>
+                        <input type="text" id="nom" class="form-control" placeholder="Nombre completo del docente">
                     </div>
-                    
                     <div class="col-12 mb-3">
-                        <label class="form-label">Correo del Tutor (Avisos)</label>
+                        <label class="form-label">Número de Empleado</label>
                         <div class="input-group">
-                            <span class="input-group-text border-0" style="border-radius: 12px 0 0 12px;"><i class='bx bx-envelope'></i></span>
-                            <input type="email" id="correo_tutor" class="form-control" placeholder="ejemplo@correo.com" style="border-radius: 0 12px 12px 0;">
-                        </div>
-                    </div>
-
-                    <div class="col-12 mb-3">
-                        <label class="form-label">Matrícula Escolar</label>
-                        <div class="input-group">
-                            <span class="input-group-text border-0" style="border-radius: 12px 0 0 12px;"><i class='bx bx-id-card'></i></span>
-                            <input type="text" id="mat" class="form-control" placeholder="Ej: 210080000" style="border-radius: 0 12px 12px 0;">
+                            <span class="input-group-text border-0" style="border-radius: 12px 0 0 12px;"><i class='bx bx-user-badge'></i></span>
+                            <input type="text" id="num_emp" class="form-control" placeholder="Ej: 2024001" style="border-radius: 0 12px 12px 0;">
                         </div>
                     </div>
                     <div class="col-6 mb-4">
-                        <label class="form-label">Grado</label>
-                        <select id="grado" class="form-select">
-                            <option value="1">1° Semestre</option><option value="2">2° Semestre</option>
-                            <option value="3">3° Semestre</option><option value="4">4° Semestre</option>
-                            <option value="5">5° Semestre</option><option value="6">6° Semestre</option>
+                        <label class="form-label">Departamento / Área</label>
+                        <select id="depto" class="form-select">
+                            <option value="Académico">Académico</option>
+                            <option value="Administrativo">Administrativo</option>
+                            <option value="Directivo">Directivo</option>
+                            <option value="Servicios">Servicios</option>
                         </select>
                     </div>
                     <div class="col-6 mb-4">
-                        <label class="form-label">Grupo</label>
-                        <input type="text" id="gru" class="form-control" placeholder="Ej: A">
+                        <label class="form-label">Turno</label>
+                        <select id="turno" class="form-select">
+                            <option value="Matutino">Matutino</option>
+                            <option value="Vespertino">Vespertino</option>
+                            <option value="Completo">Tiempo Completo</option>
+                        </select>
                     </div>
                 </div>
 
                 <div class="preview-box" id="qrCanvas">
                     <div class="text-center text-muted opacity-50 p-4">
                         <i class='bx bx-qr-scan' style="font-size: 4rem;"></i>
-                        <p class="small mt-2 mb-0">Esperando datos...</p>
+                        <p class="small mt-2 mb-0">Esperando datos del docente...</p>
                     </div>
                 </div>
 
                 <div class="d-grid gap-3">
                     <button type="button" id="btnAccion" class="btn btn-action btn-register">
-                        <i class='bx bx-cloud-upload fs-5'></i> Registrar y Generar QR
+                        <i class='bx bx-save fs-5'></i> Registrar Maestro y Generar QR
                     </button>
                     <button type="button" id="btnSave" class="btn btn-action btn-download" style="display:none;">
                         <i class='bx bx-download fs-5'></i> Guardar Imagen QR
@@ -205,36 +201,30 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
 <script>
 document.getElementById('btnAccion').addEventListener('click', function() {
     const nom = document.getElementById('nom').value.trim();
-    const mat = document.getElementById('mat').value.trim();
-    const gra = document.getElementById('grado').value;
-    const gru = document.getElementById('gru').value.trim();
-    const correo = document.getElementById('correo_tutor').value.trim();
+    const num = document.getElementById('num_emp').value.trim();
+    const depto = document.getElementById('depto').value;
+    const turno = document.getElementById('turno').value;
 
-    if(!nom || !mat || !gru || !correo) {
-        alert("Por favor, completa todos los campos, incluyendo el correo del tutor.");
-        return;
-    }
-
-    // Validación básica de correo
-    if(!correo.includes('@')) {
-        alert("Por favor, ingresa un correo electrónico válido.");
+    if(!nom || !num) {
+        alert("Por favor, completa el nombre y número de empleado.");
         return;
     }
 
     const fd = new FormData();
     fd.append('nombre', nom);
-    fd.append('matricula', mat);
-    fd.append('correo_tutor', correo); // Enviamos el nuevo dato
-    fd.append('grupo', gra + gru); 
+    fd.append('numero_empleado', num);
+    fd.append('departamento', depto); 
+    fd.append('turno', turno);
 
-    fetch('registrar_qr.php', { method: 'POST', body: fd })
+    // Ajusta esta URL al archivo que procesará la inserción en la BD de maestros
+    fetch('registrar_qr_maestros.php', { method: 'POST', body: fd })
     .then(r => r.json())
     .then(data => {
         if(data.status === 'success') {
             const canvas = document.getElementById('qrCanvas');
             canvas.innerHTML = "";
             new QRCode(canvas, {
-                text: mat,
+                text: num, // El QR suele contener el ID único o número de empleado
                 width: 280,
                 height: 280,
                 colorDark : "#064e3b",
@@ -243,7 +233,7 @@ document.getElementById('btnAccion').addEventListener('click', function() {
             });
             document.getElementById('btnSave').style.display = 'flex';
             canvas.style.borderColor = "#10b981";
-            alert("Alumno registrado correctamente. Los avisos llegarán a: " + correo);
+            alert("Maestro registrado correctamente.");
         } else {
             alert("Atención: " + data.message);
         }
@@ -259,7 +249,7 @@ document.getElementById('btnSave').addEventListener('click', function() {
     if(img) {
         const a = document.createElement('a');
         a.href = img.src;
-        a.download = `QR_${document.getElementById('mat').value}_CECyTE.png`;
+        a.download = `QR_Maestro_${document.getElementById('num_emp').value}.png`;
         a.click();
     }
 });

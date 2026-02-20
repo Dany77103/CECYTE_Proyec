@@ -1,0 +1,15 @@
+[20-Feb-2026 20:36:10 Europe/Berlin] PHP Warning:  require(PHPMailer/src/Exception.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\cecyte_sc\procesar_qr.php on line 14
+[20-Feb-2026 20:36:10 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required 'PHPMailer/src/Exception.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\cecyte_sc\procesar_qr.php:14
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\cecyte_sc\procesar_qr.php on line 14
+[20-Feb-2026 20:36:10 Europe/Berlin] PHP Warning:  require(PHPMailer/src/Exception.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\cecyte_sc\procesar_qr.php on line 14
+[20-Feb-2026 20:36:10 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required 'PHPMailer/src/Exception.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\cecyte_sc\procesar_qr.php:14
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\cecyte_sc\procesar_qr.php on line 14
+[20-Feb-2026 20:36:26 Europe/Berlin] PHP Warning:  require(PHPMailer/src/Exception.php): Failed to open stream: No such file or directory in C:\xampp\htdocs\cecyte_sc\procesar_qr.php on line 14
+[20-Feb-2026 20:36:26 Europe/Berlin] PHP Fatal error:  Uncaught Error: Failed opening required 'PHPMailer/src/Exception.php' (include_path='C:\xampp\php\PEAR') in C:\xampp\htdocs\cecyte_sc\procesar_qr.php:14
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\cecyte_sc\procesar_qr.php on line 14

@@ -43,7 +43,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             min-height: 100vh;
         }
         
-        /* --- SIDEBAR STYLE CORREGIDO --- */
         .sidebar {
             width: var(--sidebar-width);
             background: linear-gradient(180deg, var(--primary-color) 0%, var(--secondary-color) 100%);
@@ -68,7 +67,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             border-bottom: 1px solid rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
-            white-space: nowrap; /* Evita que el texto se doble */
+            white-space: nowrap;
         }
         
         .logo-name {
@@ -82,7 +81,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             flex-grow: 1;
         }
 
-        /* Ocultar elementos al colapsar para que no se amontonen */
         .sidebar.collapsed .logo-name,
         .sidebar.collapsed .link-text,
         .sidebar.collapsed .search-container {
@@ -113,7 +111,7 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             border-radius: 10px;
             transition: all 0.2s;
             margin: 4px 10px;
-            white-space: nowrap; /* Mantiene el texto en una sola línea */
+            white-space: nowrap;
         }
         
         .nav-link i {
@@ -134,7 +132,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
         }
 
-        /* --- CONTENT STYLE --- */
         .content-wrapper {
             flex: 1;
             margin-left: var(--sidebar-width);
@@ -203,7 +200,14 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
                 <li class="nav-item"><a href="estadisticas.php" class="nav-link"><i class='bx bx-chart'></i><span class="link-text">Estadísticas</span></a></li>
                 <li class="nav-item"><a href="qr_asistencia.php" class="nav-link"><i class='bx bx-qr-scan'></i><span class="link-text">Asistencia QR</span></a></li>
                 <li class="nav-item"><a href="updo.php" class="nav-link"><i class='bx bx-folder'></i><span class="link-text">Archivos</span></a></li>
-                <li class="nav-item"><a href="asignar_qr.php" class="nav-link"><i class='bx bx-user-pin'></i><span class="link-text">Asignar QR</span></a></li>
+                <li class="nav-item"><a href="asignar_qr.php" class="nav-link"><i class='bx bx-user-pin'></i><span class="link-text">Asignar QR Alumnos</span></a></li>
+                
+                <li class="nav-item">
+                    <a href="asignar_qr_maestros.php" class="nav-link">
+                        <i class='bx bx-user-check'></i>
+                        <span class="link-text">Asignar QR Maestros</span>
+                    </a>
+                </li>
             </ul>
             
             <div class="user-section">
@@ -295,7 +299,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
         const btnToggle = document.getElementById('btn-toggle');
         const sidebar = document.getElementById('sidebar');
 
-        // Función para cargar el estado de la sidebar
         function loadSidebarState() {
             const state = localStorage.getItem('sidebar-state');
             if (state === 'collapsed') {
@@ -318,7 +321,6 @@ if (!isset($_SESSION['loggedin']) || $_SESSION['loggedin'] !== true) {
             }
         });
 
-        // Buscador de la sidebar
         document.getElementById('sidebar-search').addEventListener('input', function(e) {
             const term = e.target.value.toLowerCase();
             document.querySelectorAll('.nav-item').forEach(item => {

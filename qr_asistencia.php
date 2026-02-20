@@ -33,7 +33,7 @@ session_start();
     
     <style>
         :root { 
-            --primary-color: #064e3b; /* Verde institucional */
+            --primary-color: #064e3b; 
             --accent-color: #10b981; 
             --corp-red: #be123c; 
             --bg-light: #f1f5f9;
@@ -46,7 +46,6 @@ session_start();
             min-height: 100vh;
         }
 
-        /* Header Estilo unificado */
         .navbar-custom { 
             background: #ffffff;
             border-bottom: 3px solid var(--accent-color);
@@ -72,7 +71,6 @@ session_start();
             color: white;
         }
 
-        /* Cards Estilizadas */
         .card-custom { 
             border: none;
             border-radius: 20px; 
@@ -81,7 +79,6 @@ session_start();
             overflow: hidden;
         }
         
-        /* Contenedor QR con feedback visual */
         .qr-wrapper { 
             background: #000; 
             border-radius: 15px; 
@@ -95,12 +92,10 @@ session_start();
         .mode-entrada .qr-wrapper { border-color: var(--accent-color); box-shadow: 0 0 20px rgba(16, 185, 129, 0.2); }
         .mode-salida .qr-wrapper { border-color: var(--corp-red); box-shadow: 0 0 20px rgba(190, 18, 60, 0.2); }
 
-        /* Stats Estilo Dashboard */
         .stat-card { padding: 2rem; border-left: 5px solid var(--primary-color); }
         .stat-number { font-size: 3.5rem; font-weight: 800; color: var(--primary-color); }
         .stat-label { font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* Selector de Modo */
         .mode-selector-corp {
             background: #f1f5f9;
             padding: 5px;
@@ -123,7 +118,37 @@ session_start();
         .btn-mode.active-in { background: var(--accent-color); color: white !important; }
         .btn-mode.active-out { background: var(--corp-red); color: white !important; }
 
-        /* Tabla Estilizada */
+        .room-selector {
+            background: #f8fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .room-btn-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 8px;
+        }
+
+        .btn-room {
+            border: 2px solid #e2e8f0;
+            background: white;
+            color: #64748b;
+            font-weight: 700;
+            font-size: 0.75rem;
+            padding: 8px 5px;
+            border-radius: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-room.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: white;
+        }
+
         .table thead th { 
             background: #f8fafc; 
             color: #64748b; 
@@ -137,14 +162,12 @@ session_start();
         .badge-entrada { background: rgba(16, 185, 129, 0.1); color: #065f46; font-weight: 700; }
         .badge-salida { background: rgba(190, 18, 60, 0.1); color: #9f1239; font-weight: 700; }
 
-        /* Botón Excel */
         .btn-excel {
             background-color: #166534;
             color: white; border: none; font-weight: 600;
             padding: 8px 16px; border-radius: 10px;
         }
         
-        /* Animación personalizada para filas */
         .row-anim { animation: fadeInRight 0.5s ease backwards; }
     </style>
 </head>
@@ -178,8 +201,22 @@ session_start();
             <div class="col-lg-7">
                 <div class="card card-custom h-100">
                     <div class="card-body p-5 text-center">
+                        <div class="room-selector animate__animated animate__fadeIn">
+                            <label class="stat-label d-block mb-3 text-start"><i class='bx bx-map-pin'></i> Ubicación del Scanner</label>
+                            <div class="room-btn-group" id="roomButtonGroup">
+                                <button class="btn-room" data-room="Aula A">Aula A</button>
+                                <button class="btn-room" data-room="Aula B">Aula B</button>
+                                <button class="btn-room" data-room="Aula C">Aula C</button>
+                                <button class="btn-room" data-room="Aula D">Aula D</button>
+                                <button class="btn-room" data-room="Lab 1">Lab 1</button>
+                                <button class="btn-room" data-room="Lab 2">Lab 2</button>
+                                <button class="btn-room" data-room="Biblioteca">Biblio</button>
+                            </div>
+                            <input type="hidden" id="salonSeleccionado" value="No especificado">
+                        </div>
+
                         <div class="mb-4">
-                            <h4 class="fw-bold mb-1" id="tituloEscaner text-uppercase">REGISTRO DE ENTRADA</h4>
+                            <h4 class="fw-bold mb-1" id="tituloEscaner">REGISTRO DE ENTRADA</h4>
                             <p class="text-muted small">Alinee el código QR del alumno dentro del recuadro</p>
                         </div>
                         
@@ -231,7 +268,7 @@ session_start();
 
         <div class="card card-custom mt-5 animate__animated animate__fadeInUp">
             <div class="card-header bg-white p-4 d-flex justify-content-between align-items-center border-0">
-                <div d-flex align-items-center>
+                <div>
                     <h5 class="mb-0 fw-bold"><i class='bx bx-list-ul me-2 text-success'></i>Bitácora en Tiempo Real</h5>
                 </div>
                 <div class="d-flex align-items-center gap-3">
@@ -246,7 +283,7 @@ session_start();
                     <thead>
                         <tr>
                             <th class="ps-4">Matrícula</th>
-                            <th>Nombre del Alumno</th>
+                            <th>Ubicación</th> <th>Nombre del Alumno</th>
                             <th>Hora de Registro</th>
                             <th class="text-end pe-4">Estatus</th>
                         </tr>
@@ -262,6 +299,23 @@ session_start();
     <script>
         let html5QrCode;
         let modoActual = 'entrada';
+
+        $('.btn-room').click(function() {
+            $('.btn-room').removeClass('active');
+            $(this).addClass('active');
+            const room = $(this).data('room');
+            $('#salonSeleccionado').val(room);
+            localStorage.setItem('sc_current_room', room);
+        });
+
+        function restaurarSalon() {
+            const savedRoom = localStorage.getItem('sc_current_room');
+            if(savedRoom) {
+                $(`.btn-room[data-room="${savedRoom}"]`).trigger('click');
+            } else {
+                $('.btn-room').first().trigger('click');
+            }
+        }
 
         $('#btnExportarExcel').click(function() {
             const fecha = $('#fechaFiltro').val();
@@ -313,17 +367,23 @@ session_start();
         }
 
         function procesarQR(codigoQR) {
+            const salon = $('#salonSeleccionado').val();
             $.ajax({
                 url: 'procesar_qr.php',
                 type: 'POST',
-                data: { codigo_qr: codigoQR, action: 'registrar', tipo_registro: modoActual },
+                data: { 
+                    codigo_qr: codigoQR, 
+                    action: 'registrar', 
+                    tipo_registro: modoActual,
+                    salon: salon 
+                },
                 success: function(response) {
                     try {
                         const data = (typeof response === 'object') ? response : JSON.parse(response);
                         showAlert(data.message, data.success ? 'success' : 'danger');
                         if(data.success) {
                             actualizarEstadisticas();
-                            cargarHistorial();
+                            cargarHistorial(); 
                         }
                     } catch(e) { showAlert('Error en procesamiento.', 'danger'); }
                     setTimeout(() => { if(html5QrCode) html5QrCode.resume(); }, 1800);
@@ -344,9 +404,8 @@ session_start();
             $.get('procesar_qr.php', { action: 'get_stats', t: new Date().getTime() }, function(res) {
                 try {
                     const s = (typeof res === 'object') ? res : JSON.parse(res);
-                    $('#totalHoy').addClass('animate__animated animate__bounceIn').text(s.total_hoy);
-                    $('#totalPendientes').addClass('animate__animated animate__bounceIn').text(s.pendientes_salida);
-                    setTimeout(() => $('.stat-number').removeClass('animate__animated animate__bounceIn'), 1000);
+                    $('#totalHoy').text(s.total_hoy);
+                    $('#totalPendientes').text(s.pendientes_salida);
                 } catch(e){}
             });
         }
@@ -359,29 +418,36 @@ session_start();
                     let html = '';
                     asistencias.forEach((r, index) => {
                         const delay = index < 10 ? index * 0.05 : 0;
+                        const salonTxt = r.salon ? r.salon : 'S/N';
+                        
+                        // Fila para SALIDA (si existe)
                         if(r.hora_salida && r.hora_salida !== '00:00:00' && r.hora_salida !== null) {
                             html += `<tr class="row-anim" style="animation-delay: ${delay}s">
                                 <td class="ps-4 fw-bold text-muted">${r.matricula}</td>
+                                <td><span class="badge bg-light text-dark border"><i class='bx bx-map-pin me-1 text-danger'></i>${salonTxt}</span></td>
                                 <td class="fw-semibold">${r.nombre}</td>
                                 <td>${r.hora_salida.substring(0,5)} <small class="text-muted">hrs</small></td>
                                 <td class="text-end pe-4"><span class="badge badge-salida px-3 py-2 rounded-pill">SALIDA</span></td>
                             </tr>`;
                         }
+                        // Fila para ENTRADA
                         if(r.hora_entrada) {
                             html += `<tr class="row-anim" style="animation-delay: ${delay}s">
                                 <td class="ps-4 fw-bold text-muted">${r.matricula}</td>
+                                <td><span class="badge bg-light text-dark border"><i class='bx bx-map-pin me-1 text-success'></i>${salonTxt}</span></td>
                                 <td class="fw-semibold">${r.nombre}</td>
                                 <td>${r.hora_entrada.substring(0,5)} <small class="text-muted">hrs</small></td>
                                 <td class="text-end pe-4"><span class="badge badge-entrada px-3 py-2 rounded-pill">ENTRADA</span></td>
                             </tr>`;
                         }
                     });
-                    $('#asistenciasBody').html(html || '<tr><td colspan="4" class="text-center py-5 text-muted">No se encontraron registros hoy</td></tr>');
+                    $('#asistenciasBody').html(html || '<tr><td colspan="5" class="text-center py-5 text-muted">No se encontraron registros hoy</td></tr>');
                 } catch(e){}
             });
         }
 
         $(document).ready(function() {
+            restaurarSalon();
             actualizarEstadisticas();
             cargarHistorial();
             $('#startBtn').click(startScanner);

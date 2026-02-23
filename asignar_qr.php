@@ -211,7 +211,7 @@ document.getElementById('btnAccion').addEventListener('click', function() {
     const correo = document.getElementById('correo_tutor').value.trim();
 
     if(!nom || !mat || !gru || !correo) {
-        alert("Por favor, completa todos los campos, incluyendo el correo del tutor.");
+        alert("Por favor, completa todos los campos.");
         return;
     }
 
@@ -224,13 +224,22 @@ document.getElementById('btnAccion').addEventListener('click', function() {
     const fd = new FormData();
     fd.append('nombre', nom);
     fd.append('matricula', mat);
-    fd.append('correo_tutor', correo); // Enviamos el nuevo dato
+    fd.append('correo_tutor', correo); 
     fd.append('grupo', gra + gru); 
 
+    // Cambiamos a registrar_qr.php según tu flujo
     fetch('registrar_qr.php', { method: 'POST', body: fd })
-    .then(r => r.json())
+    .then(async r => {
+        const text = await r.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            // Si el PHP lanza un error de texto, lo capturamos aquí
+            throw new Error("Error del servidor: " + text);
+        }
+    })
     .then(data => {
-        if(data.status === 'success') {
+        if(data.status === 'success' || data.success === true) {
             const canvas = document.getElementById('qrCanvas');
             canvas.innerHTML = "";
             new QRCode(canvas, {
@@ -243,14 +252,14 @@ document.getElementById('btnAccion').addEventListener('click', function() {
             });
             document.getElementById('btnSave').style.display = 'flex';
             canvas.style.borderColor = "#10b981";
-            alert("Alumno registrado correctamente. Los avisos llegarán a: " + correo);
+            alert("Alumno registrado correctamente.");
         } else {
-            alert("Atención: " + data.message);
+            alert("Error: " + (data.message || data.error));
         }
     })
     .catch(error => {
-        console.error('Error:', error);
-        alert("Error de conexión al registrar.");
+        console.error('Error detallado:', error);
+        alert("Fallo el registro: " + error.message);
     });
 });
 

@@ -4,7 +4,6 @@ use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 use PHPMailer\PHPMailer\SMTP;
 
-// Importar archivos de la librería PHPMailer (ajusta las rutas si es necesario)
 require 'PHPMailer/src/Exception.php';
 require 'PHPMailer/src/PHPMailer.php';
 require 'PHPMailer/src/SMTP.php';
@@ -24,69 +23,72 @@ try {
         throw new Exception("Error de conexión a la base de datos");
     }
 
-    // Capturamos los datos del POST
     $matricula    = $_POST['matricula'] ?? '';
     $nombre       = $_POST['nombre'] ?? '';
     $grupo        = $_POST['grupo'] ?? '';
     $correo_tutor = $_POST['correo_tutor'] ?? '';
 
-    if (empty($correo_tutor)) {
-        throw new Exception("El correo del tutor es obligatorio.");
+    if (empty($matricula) || empty($nombre) || empty($correo_tutor)) {
+        throw new Exception("Todos los campos son obligatorios.");
     }
 
-    // Estructura original de inserción
+    // --- CORRECCIÓN AQUÍ: Verificación de duplicados corregida ---
+    $checkStmt = $conn->prepare("SELECT matricula FROM qralumnos WHERE matricula = ?");
+    $checkStmt->bind_param("s", $matricula);
+    $checkStmt->execute();
+    $checkStmt->store_result(); // Necesario para que num_rows funcione
+
+    if ($checkStmt->num_rows > 0) { // <-- Se cambió num_result por num_rows
+        $checkStmt->close();
+        throw new Exception("La matrícula $matricula ya está registrada.");
+    }
+    $checkStmt->close();
+
+    // Inserción limpia
     $stmt = $conn->prepare("INSERT INTO qralumnos (matricula, nombre, grupo, correo_tutor) VALUES (?, ?, ?, ?)");
-    
-    if (!$stmt) {
-        throw new Exception("Error en la tabla qralumnos: " . $conn->error);
-    }
-
     $stmt->bind_param("ssss", $matricula, $nombre, $grupo, $correo_tutor);
     
     if ($stmt->execute()) {
         $nuevo_id = $conn->insert_id; 
 
-        // --- INICIO DE BLOQUE DE ENVÍO DE CORREO ---
+        // Bloque de correo
         $mail = new PHPMailer(true);
         $correoEnviado = false;
+        $error_mail = "OK";
 
         try {
-            // Configuración del servidor SMTP (Usa tus datos reales aquí)
             $mail->isSMTP();
             $mail->Host       = 'smtp.gmail.com'; 
             $mail->SMTPAuth   = true;
-            $mail->Username   = 'tu_correo@gmail.com';      // Tu correo institucional/Gmail
-            $mail->Password   = 'tu_contraseña_aplicacion'; // Tu contraseña de aplicación
+            $mail->Username   = 'admprueva@gmail.com';
+            $mail->Password   = 'ofkthykygjvkwcjh'; // Tu clave de 16 letras
             $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
             $mail->Port       = 587;
 
-            // Configuración del correo
-            $mail->setFrom('tu_correo@gmail.com', 'Sistema de Registro CECyTE');
+            $mail->setFrom('admprueva@gmail.com', 'Sistema CECyTE');
             $mail->addAddress($correo_tutor, $nombre); 
 
             $mail->isHTML(true);
             $mail->CharSet = 'UTF-8';
-            $mail->Subject = 'Registro Exitoso de Alumno';
-            $mail->Body    = "Hola, se ha registrado correctamente al alumno <b>$nombre</b> con matrícula <b>$matricula</b> en nuestro sistema de asistencia.";
+            $mail->Subject = 'Registro Exitoso';
+            $mail->Body    = "Hola, el alumno <b>$nombre</b> ha sido registrado correctamente.";
 
             $mail->send();
             $correoEnviado = true;
         } catch (Exception $e_mail) {
-            // No lanzamos excepción aquí para que el registro del alumno no se cancele si el mail falla
             $error_mail = $mail->ErrorInfo;
         }
-        // --- FIN DE BLOQUE DE CORREO ---
 
         ob_clean();
         echo json_encode([
             'status' => 'success', 
             'alumno_id' => $nuevo_id,
             'email_sent' => $correoEnviado,
-            'debug_mail' => $error_mail ?? 'OK'
+            'debug_mail' => $error_mail
         ]);
 
     } else {
-        throw new Exception("Error: La matrícula ya existe en el sistema.");
+        throw new Exception("Error al insertar.");
     }
 
     $stmt->close();
@@ -94,6 +96,7 @@ try {
 
 } catch (Exception $e) {
     ob_clean();
+    // Enviamos el mensaje de error en formato JSON para que el navegador lo muestre bonito
     echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
 }
 exit;

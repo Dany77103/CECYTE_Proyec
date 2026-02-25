@@ -60,6 +60,7 @@ try {
         $rol_u = $persona['tipo_u'];
         $correo_tutor = $persona['correo_tutor'];
 
+        // --- LÓGICA DE ENTRADA ---
         if ($tipo_solicitado === 'entrada') {
             $stmt = $con->prepare("SELECT id FROM registros_asistencias WHERE matricula = ? AND fecha = ? AND (hora_salida IS NULL OR hora_salida = '00:00:00') LIMIT 1");
             $stmt->execute([$cod_u, $hoy]);
@@ -72,20 +73,19 @@ try {
                 
                 $email_status = "No aplica/Sin correo";
 
-                // --- LÓGICA DE ENVÍO DE CORREO AL TUTOR ---
                 if ($rol_u === 'ALUMNO' && !empty($correo_tutor)) {
                     try {
                         $mail = new PHPMailer(true);
                         $mail->isSMTP();
                         $mail->Host       = 'smtp.gmail.com';
                         $mail->SMTPAuth   = true;
-                        $mail->Username   = 'admprueva@gmail.com'; // <--- TU CORREO DE ADMIN
-                        $mail->Password   = 'ofkthykygjvkwcjh';            // <--- TU CLAVE DE APLICACIÓN
+                        $mail->Username   = 'admprueva@gmail.com'; 
+                        $mail->Password   = 'ofkthykygjvkwcjh'; 
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->Port       = 587;
                         $mail->Timeout    = 5; 
 
-                        $mail->setFrom('TU_CORREO_ADMIN@gmail.com', 'CECyTE SC - Control Escolar');
+                        $mail->setFrom('admprueva@gmail.com', 'CECyTE SC - Control Escolar');
                         $mail->addAddress($correo_tutor);
                         $mail->isHTML(true);
                         $mail->CharSet = 'UTF-8';
@@ -109,24 +109,64 @@ try {
                 }
 
                 if (ob_get_length()) ob_end_clean(); 
-                echo json_encode([
-                    "success" => true, 
-                    "message" => "🚀 ENTRADA: $nom_u",
-                    "email" => $email_status
-                ]);
+                echo json_encode(["success" => true, "message" => "🚀 ENTRADA: $nom_u", "email" => $email_status]);
                 exit;
             }
         } 
+        // --- LÓGICA DE SALIDA (ACTUALIZADA CON CORREO) ---
         else if ($tipo_solicitado === 'salida') {
             $stmt = $con->prepare("SELECT id FROM registros_asistencias WHERE matricula = ? AND fecha = ? AND (hora_salida IS NULL OR hora_salida = '00:00:00') ORDER BY id DESC LIMIT 1");
             $stmt->execute([$cod_u, $hoy]);
             $asist = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($asist) {
+                // Actualizar hora de salida en la BD
                 $upd = $con->prepare("UPDATE registros_asistencias SET hora_salida = CURRENT_TIME() WHERE id = ?");
                 $upd->execute([$asist['id']]);
+                
+                $email_status = "No aplica/Sin correo";
+
+                // Enviar correo de salida si es alumno
+                if ($rol_u === 'ALUMNO' && !empty($correo_tutor)) {
+                    try {
+                        $mail = new PHPMailer(true);
+                        $mail->isSMTP();
+                        $mail->Host       = 'smtp.gmail.com';
+                        $mail->SMTPAuth   = true;
+                        $mail->Username   = 'admprueva@gmail.com'; 
+                        $mail->Password   = 'ofkthykygjvkwcjh'; 
+                        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                        $mail->Port       = 587;
+                        $mail->Timeout    = 5; 
+
+                        $mail->setFrom('admprueva@gmail.com', 'CECyTE SC - Control Escolar');
+                        $mail->addAddress($correo_tutor);
+                        $mail->isHTML(true);
+                        $mail->CharSet = 'UTF-8';
+                        $mail->Subject = "Aviso de Salida: $nom_u";
+                        $mail->Body    = "
+                            <div style='font-family: sans-serif; border: 1px solid #ddd; padding: 20px;'>
+                                <h2 style='color: #be123c;'>Notificación de Asistencia</h2>
+                                <p>Le informamos que el alumno <b>$nom_u</b> con matrícula <b>$cod_u</b> 
+                                ha registrado su <b>SALIDA</b> del plantel.</p>
+                                <p><b>Hora:</b> " . date('H:i:s') . "</p>
+                                <hr>
+                                <p style='font-size: 12px; color: #777;'>Este es un mensaje automático del sistema CECyTE SC.</p>
+                            </div>";
+
+                        $mail->send();
+                        $email_status = "Enviado";
+                    } catch (Exception $e_mail) {
+                        $email_status = "Error Mail: " . $mail->ErrorInfo;
+                    }
+                }
+
                 if (ob_get_length()) ob_end_clean();
-                echo json_encode(["success" => true, "message" => "✅ SALIDA: $nom_u"]);
+                echo json_encode([
+                    "success" => true, 
+                    "message" => "✅ SALIDA: $nom_u",
+                    "email" => $email_status
+                ]);
             } else {
                 throw new Exception("❌ $nom_u no tiene entrada activa.");
             }

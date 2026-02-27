@@ -41,6 +41,14 @@ session_start();
         .stat-number { font-size: 3.5rem; font-weight: 800; color: var(--primary-color); }
         .badge-entrada { background: rgba(16, 185, 129, 0.1); color: #065f46; font-weight: 700; }
         .badge-salida { background: rgba(190, 18, 60, 0.1); color: #9f1239; font-weight: 700; }
+        
+        .manual-input { border-radius: 10px; border: 1px solid #dee2e6; padding: 10px; margin-bottom: 10px; font-size: 0.9rem; }
+        .btn-manual-submit { background-color: var(--primary-color); color: white; border-radius: 10px; font-weight: 600; width: 100%; padding: 12px; transition: 0.3s; border: none; }
+        .btn-manual-submit:hover { opacity: 0.9; color: white; }
+
+        /* Estilo para el botón de acceso manual inicial */
+        #btnUnlockManual { border: 2px dashed #cbd5e1; color: #64748b; transition: 0.3s; }
+        #btnUnlockManual:hover { border-color: var(--primary-color); color: var(--primary-color); background: #fff; }
     </style>
 </head>
 <body class="mode-entrada">
@@ -91,9 +99,29 @@ session_start();
                     <p class="text-muted small fw-bold mb-0">TOTAL HOY</p>
                     <h2 id="totalHoy" class="stat-number">0</h2>
                 </div>
-                <div class="card card-custom stat-card" style="border-left-color: var(--accent-color);">
+                <div class="card card-custom stat-card mb-4" style="border-left-color: var(--accent-color);">
                     <p class="text-muted small fw-bold mb-0">EN PLANTEL</p>
                     <h2 id="totalPendientes" class="stat-number" style="color: var(--accent-color);">0</h2>
+                </div>
+
+                <div class="card card-custom">
+                    <div class="card-body p-4 text-center">
+                        <h6 class="fw-bold mb-3"><i class='bx bx-user-plus me-2'></i>Registro Manual</h6>
+                        
+                        <button id="btnUnlockManual" class="btn w-100 py-3 fw-bold mb-2">
+                            <i class='bx bx-lock-alt me-2'></i>HABILITAR REGISTRO MANUAL
+                        </button>
+
+                        <div id="manualForm" style="display: none;" class="text-start mt-3">
+                            <input type="text" id="manualNombre" class="form-control manual-input" placeholder="Nombre completo">
+                            <input type="text" id="manualMatricula" class="form-control manual-input" placeholder="Matrícula">
+                            <input type="email" id="manualCorreo" class="form-control manual-input" placeholder="Correo del tutor">
+                            <button type="button" class="btn btn-manual-submit" id="btnRegistroManual">
+                                REGISTRAR <span id="labelModoManual">ENTRADA</span>
+                            </button>
+                            <button type="button" class="btn btn-link btn-sm w-100 mt-2 text-muted" id="btnCancelManual">Cancelar</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -125,8 +153,32 @@ session_start();
     <script>
         let modoActual = 'entrada';
         const inputFisico = $('#physicalScannerInput');
+        const passCorrecta = "1234"; // Define aquí la contraseña para el despliegue manual
 
-        $(document).on('click', function() { inputFisico.focus(); });
+        // --- LÓGICA DE DESBLOQUEO MANUAL ---
+        $('#btnUnlockManual').click(function() {
+            const password = prompt("Ingrese la contraseña de autorización:");
+            if (password === passCorrecta) {
+                $(this).hide();
+                $('#manualForm').fadeIn();
+                $('#manualNombre').focus();
+            } else if (password !== null) {
+                alert("❌ Contraseña incorrecta");
+            }
+        });
+
+        $('#btnCancelManual').click(function() {
+            $('#manualForm').hide();
+            $('#btnUnlockManual').fadeIn();
+            inputFisico.focus();
+        });
+
+        // Enfocar escáner a menos que se esté usando el formulario manual
+        $(document).on('click', function(e) { 
+            if (!$(e.target).closest('.manual-input, #btnUnlockManual').length) {
+                inputFisico.focus(); 
+            }
+        });
 
         inputFisico.on('keypress', function(e) {
             if (e.which == 13) {
@@ -134,6 +186,46 @@ session_start();
                 if (codigo !== "") { procesarRegistro(codigo); }
                 $(this).val("");
             }
+        });
+
+        // LÓGICA REGISTRO MANUAL
+        $('#btnRegistroManual').click(function() {
+            const nombre = $('#manualNombre').val().trim();
+            const matricula = $('#manualMatricula').val().trim();
+            const correo = $('#manualCorreo').val().trim();
+            const salon = $('#salonSeleccionado').val();
+
+            if (nombre === "" || matricula === "") {
+                showAlert("Nombre y Matrícula son obligatorios", "warning");
+                return;
+            }
+
+            $.ajax({
+                url: 'procesar_qr.php',
+                type: 'POST',
+                data: { 
+                    action: 'registrar',
+                    codigo_qr: matricula,
+                    tipo_registro: modoActual,
+                    salon: salon,
+                    nombre_manual: nombre,
+                    correo_manual: correo
+                },
+                success: function(response) {
+                    try {
+                        const data = (typeof response === 'object') ? response : JSON.parse(response);
+                        showAlert(data.message, data.success ? 'success' : 'danger');
+                        if(data.success) {
+                            $('#manualNombre, #manualMatricula, #manualCorreo').val("");
+                            // Opcional: ocultar tras éxito
+                            $('#manualForm').hide();
+                            $('#btnUnlockManual').fadeIn();
+                        }
+                        actualizarEstadisticas();
+                        cargarHistorial();
+                    } catch(e) { showAlert('Error en el proceso manual', 'danger'); }
+                }
+            });
         });
 
         function procesarRegistro(codigo) {
@@ -168,6 +260,7 @@ session_start();
             $(this).addClass('active-in');
             $('#btnModoSalida').removeClass('active-out');
             $('#statusPulse').attr('class', 'spinner-grow text-success');
+            $('#labelModoManual').text('ENTRADA');
         });
 
         $('#btnModoSalida').click(function() {
@@ -176,6 +269,7 @@ session_start();
             $(this).addClass('active-out');
             $('#btnModoEntrada').removeClass('active-in');
             $('#statusPulse').attr('class', 'spinner-grow text-danger');
+            $('#labelModoManual').text('SALIDA');
         });
 
         $('.btn-room').click(function() {
@@ -207,12 +301,9 @@ session_start();
                 success: function(res) {
                     try {
                         const asistencias = (typeof res === 'object') ? res : JSON.parse(res);
-                        console.log("Datos recibidos para la tabla:", asistencias); // DEPURACIÓN: Ver en consola F12
-                        
                         let html = '';
                         if(asistencias && asistencias.length > 0) {
                             asistencias.forEach(r => {
-                                // Mapeo flexible por si los nombres de columnas varían
                                 const matricula = r.matricula || r.codigo_qr || '---';
                                 const nombre = r.nombre || r.alumno_nombre || 'Desconocido';
                                 const salon = r.salon || r.ubicacion || '---';
@@ -233,9 +324,7 @@ session_start();
                         } else {
                             $('#asistenciasBody').html('<tr><td colspan="5" class="text-center py-3">No hay registros hoy</td></tr>');
                         }
-                    } catch(e) {
-                        console.error("Error parseando JSON historial:", e);
-                    }
+                    } catch(e) {}
                 }
             });
         }
@@ -244,7 +333,11 @@ session_start();
             inputFisico.focus();
             actualizarEstadisticas();
             cargarHistorial();
-            setInterval(() => { if(!$('#alertContainer').is(':visible')) inputFisico.focus(); }, 3000);
+            setInterval(() => { 
+                if(!$('#alertContainer').is(':visible') && !$('.manual-input').is(':focus')) {
+                    inputFisico.focus(); 
+                } 
+            }, 3000);
         });
     </script>
 </body>
